@@ -1,12 +1,9 @@
 package com.netflix.zuul.netty.filter;
 
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-
 /**
  * @author HWEB
  */
-public class AbstractZuulFilter implements ZuulFilter {
+public abstract class AbstractZuulFilter implements ZuulFilter {
 
     private final String type;
     private final int order;
@@ -27,12 +24,22 @@ public class AbstractZuulFilter implements ZuulFilter {
     }
 
     @Override
-    public boolean shouldFilter(HttpRequest request, HttpResponse response) {
-        return false;
+    public Void execute(RequestContext requestContext) {
+        if (shouldFilter(requestContext)) {
+            return doExecute(requestContext);
+        }
+        return null;
+    }
+
+    protected boolean shouldFilter(RequestContext requestContext) {
+        return true;
     }
 
     @Override
-    public Void execute(HttpRequest request, HttpResponse response) {
-        return null;
+    public int compareTo(Object o) {
+        return order - ((ZuulFilter) o).order();
     }
+
+
+    protected abstract Void doExecute(RequestContext requestContext);
 }

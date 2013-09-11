@@ -1,11 +1,8 @@
 package com.netflix.zuul.netty.filter;
 
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-
 /**
  */
-public interface ZuulFilter<T> extends Ordered {
+public interface ZuulFilter<T> extends Ordered, Comparable<ZuulFilter<T>> {
 
     /**
      * @return
@@ -13,15 +10,9 @@ public interface ZuulFilter<T> extends Ordered {
     String type();
 
     /**
-     * a "true" return from this method means that the run() method should be invoked
-     *
-     * @return true if the run() method should be invoked. false will not invoke the run() method
+     * @param requestContext current request context
+     * @return
      */
-    boolean shouldFilter(HttpRequest request, HttpResponse response);
+    T execute(RequestContext requestContext);
 
-    /**
-     * @param request
-     * @param response
-     */
-    T execute(HttpRequest request, HttpResponse response);
 }

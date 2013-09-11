@@ -20,8 +20,7 @@ import com.netflix.config.DynamicPropertyFactory
 import com.netflix.config.DynamicStringProperty
 import com.netflix.zuul.constants.ZuulConstants
 import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.HttpResponse
+import com.netflix.zuul.netty.filter.RequestContext
 
 class DebugFilter extends AbstractZuulFilter {
 
@@ -33,14 +32,12 @@ class DebugFilter extends AbstractZuulFilter {
     }
 
 
-    boolean shouldFilter(HttpRequest request, HttpResponse response) {
-        if ("true".equals(request.getParameter(debugParameter.get()))) return true;
-        return routingDebug.get();
-
+    boolean shouldFilter(RequestContext requestContext) {
+        return true;
     }
 
-    public Void execute(HttpRequest request, HttpResponse response) {
-
+    public Void doExecute(RequestContext requestContext) {
+        println requestContext.getRequest()
         return null;
     }
 
