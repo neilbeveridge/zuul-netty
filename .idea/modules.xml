@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/netty-framework-api/netty-framework-api.iml" filepath="$PROJECT_DIR$/netty-framework-api/netty-framework-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/netty-framework-plugins/netty-framework-plugins.iml" filepath="$PROJECT_DIR$/netty-framework-plugins/netty-framework-plugins.iml" />
+      <module fileurl="file://$PROJECT_DIR$/netty-mock-server/netty-mock-server.iml" filepath="$PROJECT_DIR$/netty-mock-server/netty-mock-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/netty-server/netty-server.iml" filepath="$PROJECT_DIR$/netty-server/netty-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zuul-core.iml" filepath="$PROJECT_DIR$/zuul-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zuul-netty.iml" filepath="$PROJECT_DIR$/zuul-netty.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zuul-simple-webapp/zuul-simple-webapp.iml" filepath="$PROJECT_DIR$/zuul-simple-webapp/zuul-simple-webapp.iml" />
+    </modules>
+  </component>
+</project>
+

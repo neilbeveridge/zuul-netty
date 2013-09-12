@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/netty-framework-api" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/netty-framework-plugins" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/netty-mock-server" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/netty-server" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/zuul-core" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/zuul-simple-webapp" charset="UTF-8" />
+  </component>
+</project>
+

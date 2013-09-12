@@ -1,0 +1,8 @@
+com/hotels/architecture/proxy/framework/plugins/LoggingResponseHandler$1.class
+com/hotels/architecture/proxy/framework/plugins/LoggingResponseHandler.class
+com/hotels/architecture/proxy/framework/plugins/GlobalRedirectRequestHandler$1.class
+com/hotels/architecture/proxy/framework/plugins/LoggingRequestHandler$1.class
+com/hotels/architecture/proxy/framework/plugins/GlobalRedirectRequestHandler.class
+com/hotels/architecture/proxy/framework/plugins/GlobalRewriteRequestHandler.class
+com/hotels/architecture/proxy/framework/plugins/LoggingRequestHandler.class
+com/hotels/architecture/proxy/framework/plugins/GlobalRewriteRequestHandler$1.class
