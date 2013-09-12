@@ -1,15 +1,19 @@
 package com.netflix.zuul.proxy.handler;
 
-import com.netflix.zuul.proxy.core.Application;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.netflix.zuul.proxy.core.Application.APP_HEADER;
-import static com.netflix.zuul.proxy.core.Application.DEFAULT_APPLICATION;
+import java.net.URL;
+
+import static com.netflix.zuul.proxy.core.Route.ROUTE_HEADER;
 
 public class HttpAppResolvingHandler extends SimpleChannelUpstreamHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpAppResolvingHandler.class);
+    private static final String STATIC_ROUTE = "http://uk.hotels.com:80";
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
@@ -17,27 +21,12 @@ public class HttpAppResolvingHandler extends SimpleChannelUpstreamHandler {
         if (e.getMessage() instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) e.getMessage();
 
-            for (Application app : Application.values()) {
-                if (request.getUri().startsWith(app.getPrefix())) {
-                    request.setHeader(APP_HEADER, app.name());
-                    break;
-                }
-            }
+            request.setHeader(ROUTE_HEADER, STATIC_ROUTE);
+            LOG.debug("setting header {} to {}", ROUTE_HEADER, STATIC_ROUTE);
 
-            for (Application app : Application.values()) {
-                for (String uri : app.getUris()) {
-                    if (request.getUri().equals(uri)) {
-                        request.setHeader(APP_HEADER, app.name());
-                        break;
-                    }
-                }
-            }
-
-            if (!request.containsHeader(APP_HEADER)) {
-                request.setHeader(APP_HEADER, DEFAULT_APPLICATION.name());
-            }
+            request.setHeader("host", new URL(STATIC_ROUTE).getHost());
         }
-        
+
         super.messageReceived(ctx, e);
     }
 }

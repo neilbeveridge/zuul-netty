@@ -1,5 +1,6 @@
 package com.netflix.zuul.proxy.framework.plugins;
 
+import com.netflix.zuul.proxy.framework.api.FrameworkHttpRequest;
 import com.netflix.zuul.proxy.framework.api.FrameworkHttpResponse;
 import com.netflix.zuul.proxy.framework.api.HttpResponseHandler;
 import com.netflix.zuul.proxy.framework.api.HttpResponseHandlerFactory;
@@ -22,7 +23,7 @@ public class LoggingResponseHandler implements HttpResponseHandler {
     }
 
     @Override
-    public void responseReceived(FrameworkHttpResponse response) {
+    public void responseReceived(FrameworkHttpRequest request, FrameworkHttpResponse response) {
         LOG.debug("{} - received response: {}", tag, response.getHeaders());
         response.addHeader("X-hcom-some-plugin-header", "some data");
     }
@@ -49,4 +50,13 @@ public class LoggingResponseHandler implements HttpResponseHandler {
         return true;
     }
 
+    @Override
+    public int order() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String type() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

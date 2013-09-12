@@ -25,6 +25,16 @@ public class GlobalRedirectRequestHandler implements HttpRequestHandler {
     }
 
     @Override
+    public int order() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String type() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void requestReceived(FrameworkHttpRequest request) {
         LOG.debug("{} - {}", tag, request.getUri());
         switch (request.getUri()) {

@@ -1,6 +1,5 @@
 package com.netflix.zuul.proxy.handler;
 
-import com.netflix.zuul.proxy.framework.api.FrameworkHttpResponse;
 import com.netflix.zuul.proxy.framework.api.HttpResponseHandler;
 import com.netflix.zuul.proxy.framework.api.HttpResponseHandlerFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -13,8 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map.Entry;
 
 public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
 
@@ -49,7 +46,7 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
                 if (responseHandler.supportedMethods() == null || Arrays.binarySearch(responseHandler.supportedMethods(), request.getMethod()) >= 0) {
                     if (responseHandler.supportedURIs() == null || Arrays.binarySearch(responseHandler.supportedURIs(), request.getUri()) >= 0) {
                         LOG.debug("handler: {} is calling response-handler: {}", tag, responseHandler.getClass().getSimpleName());
-                        responseHandler.responseReceived(new HttpResponseAdapter(response));
+                        responseHandler.responseReceived(new HttpRequestFrameworkAdapter(request), new HttpResponseFrameworkAdapter(response));
                     }
                 }
             }
@@ -60,36 +57,6 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
         }
 
         super.writeRequested(ctx, e);
-    }
-
-    public static final class HttpResponseAdapter implements FrameworkHttpResponse {
-
-        private final HttpResponse response;
-
-        private HttpResponseAdapter(HttpResponse response) {
-            this.response = response;
-        }
-
-        @Override
-        public String getHeader(String name) {
-            return response.getHeader(name);
-        }
-
-        @Override
-        public boolean containsHeader(String name) {
-            return response.containsHeader(name);
-        }
-
-        @Override
-        public void addHeader(String name, Object value) {
-            response.addHeader(name, value);
-        }
-
-        @Override
-        public List<Entry<String, String>> getHeaders() {
-            return response.getHeaders();
-        }
-
     }
 
 }

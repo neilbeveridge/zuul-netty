@@ -1,9 +1,5 @@
 package com.netflix.zuul.proxy;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -13,7 +9,8 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.yammer.metrics.reporting.ConsoleReporter;
+import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
 
 public class HttpServer {
 
@@ -43,6 +40,6 @@ public class HttpServer {
         LOG.info("Starting server...");
         new HttpServer(8080).run();
 
-        ConsoleReporter.enable(1, TimeUnit.SECONDS);
+        //ConsoleReporter.enable(1, TimeUnit.SECONDS);
     }
 }

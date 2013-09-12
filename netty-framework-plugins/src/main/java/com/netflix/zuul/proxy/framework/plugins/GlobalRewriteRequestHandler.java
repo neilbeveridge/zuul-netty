@@ -14,6 +14,16 @@ public class GlobalRewriteRequestHandler implements HttpRequestHandler {
     private static final HttpMethod[] SUPPORTED_METHODS = new HttpMethod[]{GET};
 
     @Override
+    public int order() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String type() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void requestReceived(FrameworkHttpRequest request) {
         switch (request.getUri()) {
         case "/foo":

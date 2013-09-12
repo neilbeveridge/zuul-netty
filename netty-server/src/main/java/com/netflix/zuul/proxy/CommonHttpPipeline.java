@@ -36,7 +36,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();
 
-        pipeline.addLast("idle-detection", IDLE_STATE_HANDLER);
+        //pipeline.addLast("idle-detection", IDLE_STATE_HANDLER);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
         pipeline.addLast("http-encoder", new HttpResponseEncoder());
         pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"));
