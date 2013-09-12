@@ -8,7 +8,6 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
-import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,12 +64,6 @@ public class HttpKeepAliveHandler extends IdleStateAwareChannelHandler {
             ctx.setAttachment(e.getMessage());
         }
         super.messageReceived(ctx, e);
-    }
-
-    @Override
-    public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws Exception {
-        LOG.info("closing channel after {} event was intercepted", e.getState().toString());
-        e.getChannel().close();
     }
 
 }

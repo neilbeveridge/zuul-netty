@@ -34,9 +34,6 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     private static final boolean IS_KEEP_ALIVE_SUPPORTED = true;
     private static final boolean IS_REQUEST_CHUNKED_ENABLED = true;
 
-    private final ChannelHandler IDLE_STATE_HANDLER;
-    private final ChannelHandler KEEP_ALIVE_HANDLER = new HttpKeepAliveHandler(IS_KEEP_ALIVE_SUPPORTED);
-
     private static final ChannelHandler HTTP_GEO_LOCATION = new HttpRequestFrameworkHandler("http-geo-location", LoggingRequestHandler.FACTORY);
     private static final ChannelHandler HTTP_GEO_REDIRECTION = new HttpRequestFrameworkHandler("http-geo-redirection", LoggingRequestHandler.FACTORY);
     private static final ChannelHandler HTTP_CONTEXT_RESOLVER = new HttpRequestFrameworkHandler("http-context-resolver",
@@ -50,27 +47,30 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     private static final ChannelHandler HTTP_APP_REDIRECT = new HttpRequestFrameworkHandler("http-app-redirect", LoggingRequestHandler.FACTORY);
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY);
-
     private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(128, 1048576, 1048576));
-
     private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
             Executors.newCachedThreadPool());
-    private static final ConnectionPool OUTBOUND_CONNECTION_POOL = new CommonsConnectionPool(OUTBOUND_CHANNEL_FACTORY);
+
+    private final ConnectionPool outboundConnectionPool;
+    private final ChannelHandler idleStateHandler;
+    private final ChannelHandler KEEP_ALIVE_HANDLER = new HttpKeepAliveHandler(IS_KEEP_ALIVE_SUPPORTED);
 
     public CommonHttpPipeline(Timer timer) {
-        IDLE_STATE_HANDLER = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
+        idleStateHandler = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
+        outboundConnectionPool = new CommonsConnectionPool(timer, OUTBOUND_CHANNEL_FACTORY);
     }
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();
 
-        pipeline.addLast("idle-detection", IDLE_STATE_HANDLER);
+        pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
         pipeline.addLast("http-encoder", new HttpResponseEncoder());
         pipeline.addLast("http-deflater", new HttpContentCompressor());
         pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"));
         pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
+        pipeline.addLast("idle-watchdog", new IdleChannelWatchdog("inbound"));
 
         pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
 
@@ -85,7 +85,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
         pipeline.addLast("app-http-app-rewrite", HTTP_APP_REWRITE);
         pipeline.addLast("app-http-app-redirect", HTTP_APP_REDIRECT);
 
-        pipeline.addLast("proxy", new HttpProxyHandler(OUTBOUND_CONNECTION_POOL, IS_REQUEST_CHUNKED_ENABLED));
+        pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
 
         return pipeline;
     }

@@ -1,5 +1,7 @@
 package com.netflix.zuul.proxy;
 
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.reporting.JmxReporter;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -39,6 +41,8 @@ public class HttpServer {
 
         LOG.info("Starting server...");
         new HttpServer(8080).run();
+
+        JmxReporter.startDefault(Metrics.defaultRegistry());
 
         //ConsoleReporter.enable(1, TimeUnit.SECONDS);
     }

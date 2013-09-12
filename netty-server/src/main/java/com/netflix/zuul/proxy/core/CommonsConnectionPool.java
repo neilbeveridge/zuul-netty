@@ -12,6 +12,7 @@ import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,15 +34,15 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     private static final long TIME_BETWEEN_BACKGROUND_EVICTIONS = 1000L;
     private static final long EVICT_IDLE_AFTER = -1; // -ve for no time-based eviction
 
-    private final Counter aliveConnections = Metrics.newCounter(CommonsConnectionPool.class, "alive-connections");
     private volatile Map<URL, ObjectPool<ChannelFuture>> pool = new HashMap<>();
     private final ChannelFactory channelFactory;
     private Lock poolCreationRaceLock = new ReentrantLock();
+    private final Timer timer;
 
     private GenericObjectPool<ChannelFuture> createApplicationPool(final URL routeHost)
-    throws IllegalRouteException {
+            throws IllegalRouteException {
 
-        //only the connection oriented parts of the URL should be set - avoid accidental creation of a ton of connection pools
+        //only the connection-oriented parts of the URL should be set - avoid accidental creation of a ton of connection pools
         try {
             if (!new URL(routeHost.getProtocol(), routeHost.getHost(), routeHost.getPort(), "").equals(routeHost)) {
                 LOG.info("route {} should only define protocol, host and port", routeHost);
@@ -56,6 +57,8 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
         }
 
         final GenericObjectPool<ChannelFuture> applicationPool = new GenericObjectPool<ChannelFuture>(new PoolableObjectFactory<ChannelFuture>() {
+
+            final Counter aliveConnections = Metrics.newCounter(CommonsConnectionPool.class, String.format("pool-%s-connected", routeHost.toString().toLowerCase()));
 
             @Override
             public void activateObject(ChannelFuture future) throws Exception {
@@ -80,7 +83,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
             @Override
             public ChannelFuture makeObject() throws Exception {
                 ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
-                bootstrap.setPipelineFactory(new HttpOutboundPipeline());
+                bootstrap.setPipelineFactory(new HttpOutboundPipeline(timer));
 
                 final ChannelFuture future = bootstrap.connect(new InetSocketAddress(routeHost.getHost(), routeHost.getPort()));
                 LOG.info("attempting connection to remote host {}:{} on connection {}", routeHost.getHost(), routeHost.getPort(),
@@ -147,13 +150,14 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
         return applicationPool;
     }
 
-    public CommonsConnectionPool(ChannelFactory channelFactory) {
+    public CommonsConnectionPool(Timer timer, ChannelFactory channelFactory) {
         this.channelFactory = channelFactory;
+        this.timer = timer;
     }
 
     @Override
     public Connection borrow(URL routeHost)
-    throws IllegalRouteException {
+            throws IllegalRouteException {
 
         //only take out the lock if absolutely necessary
         if (!pool.containsKey(routeHost)) {
