@@ -1,7 +1,8 @@
 package com.netflix.zuul.proxy.handler;
 
-import java.util.concurrent.TimeUnit;
-
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Timer;
+import com.yammer.metrics.core.TimerContext;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
@@ -11,9 +12,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Timer;
-import com.yammer.metrics.core.TimerContext;
+import java.util.concurrent.TimeUnit;
 
 public class ServerTimingHandler extends SimpleChannelHandler {
 
@@ -44,16 +43,20 @@ public class ServerTimingHandler extends SimpleChannelHandler {
             if (((HttpChunk) e.getMessage()).isLast()) {
                 context.stop();
                 logDifference(System.nanoTime() - start);
+                LOG.debug("saw last chunk");
             }
         } else if (e.getMessage() instanceof HttpMessage) {
             if (!((HttpMessage) e.getMessage()).isChunked()) {
                 context.stop();
                 logDifference(System.nanoTime() - start);
             }
+            LOG.debug("headers: {}", ((HttpMessage) e.getMessage()).getHeaders());
         } else {
             context.stop();
             logDifference(System.nanoTime() - start);
         }
+
+        LOG.debug("saw message {}", e.getMessage());
 
         super.writeRequested(ctx, e);
     }

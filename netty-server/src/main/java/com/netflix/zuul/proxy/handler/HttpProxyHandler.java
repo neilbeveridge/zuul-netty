@@ -33,7 +33,7 @@ public class HttpProxyHandler extends SimpleChannelHandler {
     private volatile boolean doneSendingRequestAndBuffer = false;
     private volatile Connection outboundConnection;
 
-    private HttpProxyHandler(ConnectionPool connectionPool, boolean isChunkedRequestsSupported) {
+    public HttpProxyHandler(ConnectionPool connectionPool, boolean isChunkedRequestsSupported) {
         this.isChunkedRequestsSupported = isChunkedRequestsSupported;
         this.connectionPool = connectionPool;
     }
@@ -114,12 +114,13 @@ public class HttpProxyHandler extends SimpleChannelHandler {
                 LOG.debug("return write isConnected:{}, type={} - {}", outboundNull() ? WENT_AWAY : outboundConnection.getChannel().isConnected(), e
                         .getMessage().getClass().getSimpleName(), outboundNull() ? WENT_AWAY : outboundConnection.getId());
 
+                //TODO: this is an extraordinarily bad idea as 1: it brings the buffer into user space and 2: it doesn't reset the buffer properly
                 if (e.getMessage() instanceof HttpResponse) {
                     final HttpResponse response = (HttpResponse) e.getMessage();
-                    LOG.debug("response payload {} {}", outboundNull() ? WENT_AWAY : outboundConnection.getId(), dumpBuffer(response.getContent()));
+                    //LOG.debug("response payload {} {}", outboundNull() ? WENT_AWAY : outboundConnection.getId(), dumpBuffer(response.getContent()));
                 } else if (e.getMessage() instanceof HttpChunk) {
                     final HttpChunk chunk = (HttpChunk) e.getMessage();
-                    LOG.debug("chunk payload {} {}", outboundNull() ? WENT_AWAY : outboundConnection.getId(), dumpBuffer(chunk.getContent()));
+                    //LOG.debug("chunk payload {} {}", outboundNull() ? WENT_AWAY : outboundConnection.getId(), dumpBuffer(chunk.getContent()));
                 }
 
                 if (e.getMessage() instanceof HttpResponse) {
@@ -339,23 +340,6 @@ public class HttpProxyHandler extends SimpleChannelHandler {
 
     private boolean connected() {
         return outboundConnection != null && outboundConnection.getChannel().isConnected();
-    }
-
-    public static final class Factory implements com.netflix.zuul.proxy.handler.HandlerFactory {
-
-        private final ConnectionPool connectionPool;
-        private final boolean isChunkedRequestsSupported;
-
-        public Factory(ConnectionPool connectionPool, boolean isChunkedRequestsSupported) {
-            this.connectionPool = connectionPool;
-            this.isChunkedRequestsSupported = isChunkedRequestsSupported;
-        }
-
-        @Override
-        public ChannelHandler getInstance() {
-            return new HttpProxyHandler(connectionPool, isChunkedRequestsSupported);
-        }
-
     }
 
 }

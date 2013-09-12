@@ -1,9 +1,5 @@
 package com.netflix.zuul.proxy.handler;
 
-import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
-
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
@@ -15,6 +11,10 @@ import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.isKeepAlive;
 
 public class HttpKeepAliveHandler extends IdleStateAwareChannelHandler {
 
@@ -47,10 +47,11 @@ public class HttpKeepAliveHandler extends IdleStateAwareChannelHandler {
                     e.getFuture().addListener(ChannelFutureListener.CLOSE);
                 }
             } else {
+                response.removeHeader(CONTENT_LENGTH);
                 LOG.debug("keep-alive IMPLIED for this connection as it is chunked");
             }
         } else if (e.getMessage() instanceof HttpChunk) {
-            LOG.debug("found chunk");
+            LOG.debug("found chunk {}", ((HttpChunk)e.getMessage()).getContent());
         } else {
             LOG.debug("found something else");
         }
