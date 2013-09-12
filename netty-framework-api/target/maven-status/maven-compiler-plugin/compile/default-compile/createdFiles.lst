@@ -1,8 +1,0 @@
-com/hotels/architecture/proxy/framework/api/FrameworkHttpRequest.class
-com/hotels/architecture/proxy/framework/api/HttpHandler.class
-com/hotels/architecture/proxy/framework/api/HttpRequestHandlerFactory.class
-com/hotels/architecture/proxy/framework/api/HttpResponseHandlerFactory.class
-com/hotels/architecture/proxy/framework/api/HttpResponseHandler.class
-com/hotels/architecture/proxy/framework/api/HttpRequestHandler.class
-com/hotels/architecture/proxy/framework/api/Interrupts.class
-com/hotels/architecture/proxy/framework/api/FrameworkHttpResponse.class
