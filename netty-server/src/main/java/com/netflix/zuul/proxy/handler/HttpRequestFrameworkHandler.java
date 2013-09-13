@@ -10,8 +10,6 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
 public class HttpRequestFrameworkHandler extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpRequestFrameworkHandler.class);
@@ -29,15 +27,9 @@ public class HttpRequestFrameworkHandler extends SimpleChannelUpstreamHandler {
         if (e.getMessage() instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) e.getMessage();
             InterruptsImpl callback = new InterruptsImpl(request, e.getChannel());
+            LOG.debug("handler: {} is calling request-handler: {}", tag, requestHandler.getClass().getSimpleName());
+            requestHandler.requestReceived(new HttpRequestFrameworkAdapter(request));
 
-            if (requestHandler.isEnabled()) {
-                if (requestHandler.supportedMethods() == null || Arrays.binarySearch(requestHandler.supportedMethods(), request.getMethod()) >= 0) {
-                    if (requestHandler.supportedURIs() == null || Arrays.binarySearch(requestHandler.supportedURIs(), request.getUri()) >= 0) {
-                        LOG.debug("handler: {} is calling request-handler: {}", tag, requestHandler.getClass().getSimpleName());
-                        requestHandler.requestReceived(new HttpRequestFrameworkAdapter(request));
-                    }
-                }
-            }
 
             if (callback.isInterrupted()) {
                 //plugin requested that execution is interrupted i.e. not passed down the pipeline

@@ -1,5 +1,6 @@
 package com.netflix.zuul.netty.filter;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ public class ZuulFiltersLoaderTest {
     public static final Path FILTERS_ROOT_PATH = Paths.get(ZuulFiltersLoaderTest.class.getResource("/filters").getFile());
 
     @Test
+    @Ignore
     public void notifiesListenersOfNewFilters() throws Exception {
         ZuulFiltersLoader zuulFiltersLoader = new ZuulFiltersLoader(FILTERS_ROOT_PATH);
         FiltersListener filtersListener = mock(FiltersListener.class);

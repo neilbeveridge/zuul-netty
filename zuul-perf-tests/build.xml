@@ -9,10 +9,8 @@
 
   <target name="jmeter">
     <jmeter jmeterhome="${basedir}/tools/apache-jmeter-2.9" testplan="${basedir}/src/test/jmeter/burner.jmx"
-            resultlog="${basedir}/target/jmeter-results-100-users.jtl">
+            resultlog="${basedir}/target/jmeter-results.jtl">
       <jvmarg value="-Xmx512m"/>
-      <property name="request.threads" value="10"/>
-      <property name="request.loop" value="10"/>
     </jmeter>
 
   </target>

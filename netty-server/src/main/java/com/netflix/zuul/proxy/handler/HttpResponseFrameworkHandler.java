@@ -10,8 +10,6 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
 public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpResponseFrameworkHandler.class);
@@ -39,14 +37,8 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
             HttpResponse response = (HttpResponse) e.getMessage();
             HttpRequest request = (HttpRequest) ctx.getAttachment();
 
-            if (responseHandler.isEnabled()) {
-                if (responseHandler.supportedMethods() == null || Arrays.binarySearch(responseHandler.supportedMethods(), request.getMethod()) >= 0) {
-                    if (responseHandler.supportedURIs() == null || Arrays.binarySearch(responseHandler.supportedURIs(), request.getUri()) >= 0) {
-                        LOG.debug("handler: {} is calling response-handler: {}", tag, responseHandler.getClass().getSimpleName());
-                        responseHandler.responseReceived(new HttpRequestFrameworkAdapter(request), new HttpResponseFrameworkAdapter(response));
-                    }
-                }
-            }
+            LOG.debug("handler: {} is calling response-handler: {}", tag, responseHandler.getClass().getSimpleName());
+            responseHandler.responseReceived(new HttpRequestFrameworkAdapter(request), new HttpResponseFrameworkAdapter(response));
 
             ctx.setAttachment(null);
         } else if (e.getMessage() instanceof HttpChunk) {
