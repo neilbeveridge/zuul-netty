@@ -1,7 +1,5 @@
 package com.netflix.zuul.netty.filter;
 
-import com.netflix.zuul.netty.HttpHandler;
-
 import java.nio.file.Path;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;

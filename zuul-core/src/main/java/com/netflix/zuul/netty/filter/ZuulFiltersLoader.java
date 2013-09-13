@@ -1,5 +1,7 @@
 package com.netflix.zuul.netty.filter;
 
+import com.netflix.zuul.netty.DynamicCodeCompiler;
+import com.netflix.zuul.netty.groovy.GroovyCompiler;
 import com.netflix.zuul.netty.util.Announcer;
 
 import java.io.File;
