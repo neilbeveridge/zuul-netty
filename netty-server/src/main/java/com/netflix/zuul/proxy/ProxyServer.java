@@ -1,5 +1,7 @@
 package com.netflix.zuul.proxy;
 
+import com.netflix.zuul.netty.filter.FiltersChangeNotifier;
+import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.reporting.JmxReporter;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -13,8 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.nio.file.Paths;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
@@ -28,6 +30,7 @@ public class ProxyServer {
     private final int port;
     private Channel channel;
     private ServerBootstrap bootstrap;
+    private FiltersChangeNotifier filtersChangeNotifier;
 
     public ProxyServer(int port) {
         this.port = port;
@@ -40,11 +43,14 @@ public class ProxyServer {
             public ProxyServer call() throws Exception {
                 // Configure the server.
                 bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-
-                bootstrap.setPipelineFactory(new CommonHttpPipeline(TIMER));
+                FiltersChangeNotifier changeNotifier = filtersChangeNotifier != null ? filtersChangeNotifier : FiltersChangeNotifier.IGNORE;
+                CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER, changeNotifier);
+                bootstrap.setPipelineFactory(pipelineFactory);
                 bootstrap.setOption("child.tcpNoDelay", true);
                 channel = bootstrap.bind(new InetSocketAddress(port));
                 LOG.info("server bound to port {}", port);
+
+                pipelineFactory.getPipeline();
 
                 return ProxyServer.this;
             }
@@ -58,6 +64,7 @@ public class ProxyServer {
     public boolean isRunning() {
         return channel != null && channel.isBound();
     }
+
 
     public FutureTask<ProxyServer> stop() {
         FutureTask<ProxyServer> future = new FutureTask<>(new Callable<ProxyServer>() {
@@ -88,10 +95,22 @@ public class ProxyServer {
     public static void main(String[] args) throws Exception {
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
         LOG.info("Starting server...");
-        new ProxyServer(9091).run().get();
+
+        ZuulFiltersLoader filtersLoader = new ZuulFiltersLoader(Paths.get(""));
+        ProxyServer proxyServer = new ProxyServer(9091)
+                .setFiltersChangeNotifier(filtersLoader);
+        proxyServer.run().get();
+
+
         JmxReporter.startDefault(Metrics.defaultRegistry());
 
         //ConsoleReporter.enable(1, TimeUnit.SECONDS);
     }
+
+    public ProxyServer setFiltersChangeNotifier(FiltersChangeNotifier filtersChangeNotifier) {
+        this.filtersChangeNotifier = filtersChangeNotifier;
+        return this;
+    }
+
 
 }

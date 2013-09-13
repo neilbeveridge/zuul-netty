@@ -14,7 +14,7 @@ import static com.google.common.collect.Lists.newArrayList;
 /**
  * @author HWEB
  */
-public class ZuulFiltersLoader {
+public class ZuulFiltersLoader implements FiltersChangeNotifier {
 
     private final Announcer<FiltersListener> announcer = Announcer.to(FiltersListener.class);
 
@@ -67,6 +67,7 @@ public class ZuulFiltersLoader {
         }
     }
 
+    @Override
     public void addFiltersListener(FiltersListener filtersListener) {
         announcer.addListener(filtersListener);
     }

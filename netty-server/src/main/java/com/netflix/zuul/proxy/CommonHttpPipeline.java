@@ -1,5 +1,6 @@
 package com.netflix.zuul.proxy;
 
+import com.netflix.zuul.netty.filter.FiltersChangeNotifier;
 import com.netflix.zuul.netty.filter.FiltersListener;
 import com.netflix.zuul.netty.filter.ZuulFilter;
 import com.netflix.zuul.netty.filter.ZuulPostFilter;
@@ -47,14 +48,23 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     private static final String START_OF_POST_FILTERS = "idle-watchdog";
     private static final String START_OF_PRE_FILTERS = "app-http-response-logger";
 
+    private final FiltersChangeNotifier filtersChangeNotifier;
+
     public CommonHttpPipeline(Timer timer) {
-        idleStateHandler = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
-        outboundConnectionPool = new CommonsConnectionPool(timer, OUTBOUND_CHANNEL_FACTORY);
+        this(timer, FiltersChangeNotifier.IGNORE);
     }
+
+    public CommonHttpPipeline(Timer timer, FiltersChangeNotifier filtersChangeNotifier) {
+        this.idleStateHandler = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
+        this.outboundConnectionPool = new CommonsConnectionPool(timer, OUTBOUND_CHANNEL_FACTORY);
+        this.filtersChangeNotifier = filtersChangeNotifier;
+    }
+
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = new DynamicPipeline();
+        DynamicPipeline pipeline = new DynamicPipeline();
+        filtersChangeNotifier.addFiltersListener(pipeline);
 
         pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());

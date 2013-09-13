@@ -1,11 +1,14 @@
 package com.netflix.zuul.proxy;
 
+import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -14,6 +17,8 @@ import static org.junit.Assert.assertTrue;
  * @author HWEB
  */
 public class ProxyServerTest {
+
+    public static final Path FILTERS_ROOT_PATH = Paths.get(ProxyServerTest.class.getResource("/filters").getFile());
 
     private ProxyServer proxyServer;
 
@@ -30,6 +35,20 @@ public class ProxyServerTest {
         assertTrue(proxyServer != null);
     }
 
+
+    @Test
+    public void registerFiltersLoader() throws Exception {
+        ZuulFiltersLoader zuulFiltersLoader = new ZuulFiltersLoader(FILTERS_ROOT_PATH);
+        proxyServer = new ProxyServer(9090)
+                .setFiltersChangeNotifier(zuulFiltersLoader)
+                .run()
+                .get();
+
+        zuulFiltersLoader.reload();
+
+
+
+    }
 
     @Test
     @Ignore

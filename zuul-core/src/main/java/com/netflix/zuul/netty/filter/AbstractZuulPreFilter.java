@@ -7,11 +7,10 @@ import com.netflix.zuul.proxy.framework.api.FrameworkHttpRequest;
  */
 public abstract class AbstractZuulPreFilter implements ZuulPreFilter {
 
-    private final String type;
+    private final String type = "pre";
     private final int order;
 
-    public AbstractZuulPreFilter(String type, int order) {
-        this.type = type;
+    public AbstractZuulPreFilter(int order) {
         this.order = order;
     }
 
