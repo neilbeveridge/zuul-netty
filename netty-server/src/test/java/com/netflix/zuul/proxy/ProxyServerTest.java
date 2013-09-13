@@ -18,7 +18,7 @@ public class ProxyServerTest {
 
     @After
     public void stopServer() throws Exception {
-        if (proxyServer != null && !proxyServer.isRunning()) {
+        if (proxyServer != null && proxyServer.isRunning()) {
             proxyServer.stop().get();
         }
     }
