@@ -62,7 +62,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.netflix.zuul.proxy.HttpServer</mainClass>
+                            <mainClass>com.netflix.zuul.proxy.ProxyServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

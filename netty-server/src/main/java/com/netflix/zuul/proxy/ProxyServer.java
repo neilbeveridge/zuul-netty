@@ -96,9 +96,9 @@ public class ProxyServer {
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
         LOG.info("Starting server...");
 
-        ZuulFiltersLoader filtersLoader = new ZuulFiltersLoader(Paths.get(""));
+        FiltersChangeNotifier changeNotifier = FiltersChangeNotifier.IGNORE;
         ProxyServer proxyServer = new ProxyServer(9091)
-                .setFiltersChangeNotifier(filtersLoader);
+                .setFiltersChangeNotifier(changeNotifier);
         proxyServer.run().get();
 
 

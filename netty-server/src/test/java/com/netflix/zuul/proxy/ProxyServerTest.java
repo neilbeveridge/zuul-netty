@@ -1,6 +1,5 @@
 package com.netflix.zuul.proxy;
 
-import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,19 +35,19 @@ public class ProxyServerTest {
     }
 
 
-    @Test
-    public void registerFiltersLoader() throws Exception {
-        ZuulFiltersLoader zuulFiltersLoader = new ZuulFiltersLoader(FILTERS_ROOT_PATH);
-        proxyServer = new ProxyServer(9090)
-                .setFiltersChangeNotifier(zuulFiltersLoader)
-                .run()
-                .get();
-
-        zuulFiltersLoader.reload();
-
-
-
-    }
+//    @Test
+//    public void registerFiltersLoader() throws Exception {
+//        ZuulFiltersLoader zuulFiltersLoader = new ZuulFiltersLoader(FILTERS_ROOT_PATH);
+//        proxyServer = new ProxyServer(9090)
+//                .setFiltersChangeNotifier(zuulFiltersLoader)
+//                .run()
+//                .get();
+//
+//        zuulFiltersLoader.reload();
+//
+//        String responseBody = sendRequest("http://localhost:9090");
+//
+//    }
 
     @Test
     @Ignore
