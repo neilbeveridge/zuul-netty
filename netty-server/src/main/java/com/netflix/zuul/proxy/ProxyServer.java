@@ -97,7 +97,7 @@ public class ProxyServer {
         LOG.info("Starting server...");
 
         FiltersChangeNotifier changeNotifier = FiltersChangeNotifier.IGNORE;
-        ProxyServer proxyServer = new ProxyServer(9091)
+        ProxyServer proxyServer = new ProxyServer(80)
                 .setFiltersChangeNotifier(changeNotifier);
         proxyServer.run().get();
 
