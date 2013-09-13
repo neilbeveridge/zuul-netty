@@ -40,7 +40,7 @@ public class HttpServer {
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
 
         LOG.info("Starting server...");
-        new HttpServer(8080).run();
+        new HttpServer(80).run();
 
         JmxReporter.startDefault(Metrics.defaultRegistry());
 

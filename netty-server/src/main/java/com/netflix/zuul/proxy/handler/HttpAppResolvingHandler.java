@@ -13,8 +13,8 @@ import static com.netflix.zuul.proxy.core.Route.ROUTE_HEADER;
 
 public class HttpAppResolvingHandler extends SimpleChannelUpstreamHandler {
     private static final Logger LOG = LoggerFactory.getLogger(HttpAppResolvingHandler.class);
-    private static final String STATIC_ROUTE = "http://ec2-54-215-170-232.us-west-1.compute.amazonaws.com:80";
-    //private static final String STATIC_ROUTE = "http://uk.hotels.com:80";
+    private static final String STATIC_ROUTE = "http://internal-stub-1251159457.us-west-1.elb.amazonaws.com:80";
+    //private static final String STATIC_ROUTE = "http://stubs-public-1639154571.us-west-1.elb.amazonaws.com:80";
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
