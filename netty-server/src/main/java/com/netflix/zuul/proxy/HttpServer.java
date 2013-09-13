@@ -3,6 +3,7 @@ package com.netflix.zuul.proxy;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.reporting.JmxReporter;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
@@ -20,19 +21,19 @@ public class HttpServer {
     private static final Logger LOG = LoggerFactory.getLogger(HttpServer.class);
 
     private final int port;
+    private Channel channel;
 
     public HttpServer(int port) {
         this.port = port;
     }
 
-    public void run() {
+    public synchronized void run() {
         // Configure the server.
         ServerBootstrap b = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
 
         b.setPipelineFactory(new CommonHttpPipeline(TIMER));
         b.setOption("child.tcpNoDelay", true);
-        b.bind(new InetSocketAddress(port));
-
+        channel = b.bind(new InetSocketAddress(port));
         LOG.info("server bound to port {}", port);
     }
 

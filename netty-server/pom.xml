@@ -9,6 +9,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0.1</version>
+    </dependency>
+    <dependency>
       <groupId>com.netflix.zuul</groupId>
       <artifactId>netty-framework-api</artifactId>
       <scope>compile</scope>
