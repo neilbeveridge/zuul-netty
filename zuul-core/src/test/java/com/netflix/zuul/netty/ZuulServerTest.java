@@ -1,9 +1,7 @@
 package com.netflix.zuul.netty;
 
 import com.google.common.base.Charsets;
-import com.netflix.zuul.netty.filter.RequestContext;
 import com.netflix.zuul.netty.filter.ZuulFilter;
-import com.netflix.zuul.netty.filter.ZuulRunner;
 import org.junit.After;
 import org.junit.Test;
 

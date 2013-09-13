@@ -1,8 +1,6 @@
 package com.netflix.zuul.netty.debug;
 
 
-import com.netflix.zuul.netty.filter.RequestContext;
-
 import java.util.ArrayList;
 import java.util.List;
 

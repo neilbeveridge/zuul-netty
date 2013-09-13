@@ -2,7 +2,6 @@ package com.netflix.zuul.proxy.handler;
 
 import com.netflix.zuul.proxy.core.InterruptsImpl;
 import com.netflix.zuul.proxy.framework.api.HttpRequestHandler;
-import com.netflix.zuul.proxy.framework.api.HttpRequestHandlerFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
@@ -17,11 +16,11 @@ public class HttpRequestFrameworkHandler extends SimpleChannelUpstreamHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpRequestFrameworkHandler.class);
 
-    private final HttpRequestHandlerFactory httpRequestHandlerFactory;
+    private final HttpRequestHandler requestHandler;
     private final String tag;
 
-    public HttpRequestFrameworkHandler(String tag, HttpRequestHandlerFactory httpRequestHandlerFactory) {
-        this.httpRequestHandlerFactory = httpRequestHandlerFactory;
+    public HttpRequestFrameworkHandler(String tag, HttpRequestHandler httpRequestHandler) {
+        this.requestHandler = httpRequestHandler;
         this.tag = tag;
     }
 
@@ -30,8 +29,6 @@ public class HttpRequestFrameworkHandler extends SimpleChannelUpstreamHandler {
         if (e.getMessage() instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) e.getMessage();
             InterruptsImpl callback = new InterruptsImpl(request, e.getChannel());
-
-            HttpRequestHandler requestHandler = httpRequestHandlerFactory.getInstance(tag, callback);
 
             if (requestHandler.isEnabled()) {
                 if (requestHandler.supportedMethods() == null || Arrays.binarySearch(requestHandler.supportedMethods(), request.getMethod()) >= 0) {

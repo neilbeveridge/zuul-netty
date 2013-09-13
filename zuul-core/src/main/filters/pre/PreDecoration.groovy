@@ -15,27 +15,24 @@
  */
 
 
+
 import com.netflix.zuul.netty.debug.Debug
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+import com.netflix.zuul.proxy.framework.api.FrameworkHttpRequest
+import com.netflix.zuul.proxy.framework.api.Route
+import com.sun.xml.internal.ws.client.RequestContext
 
 /**
  * @author mhawthorne
  */
-class PreDecorationFilter extends AbstractZuulFilter {
+class PreDecorationFilter extends AbstractZuulPreFilter {
 
     PreDecorationFilter() {
         super('pre', 5)
     }
 
     @Override
-    Void doExecute(RequestContext requestContext) {
-        // sets origin
-        Debug.addRequestDebug(requestContext, "SETTING ROUTE HOST :: > http://apache.org/")
-        requestContext.setRouteHost(new URL("http://apache.org/"));
-        // sets custom header to send to the origin
-        requestContext.addOriginResponseHeader("cache-control", "max-age=3600");
-
-        return null
+    void requestReceived(FrameworkHttpRequest request) {
+        request.addHeader(Route.ROUTE_HEADER, "http://uk.hotels.com:80");
     }
 }

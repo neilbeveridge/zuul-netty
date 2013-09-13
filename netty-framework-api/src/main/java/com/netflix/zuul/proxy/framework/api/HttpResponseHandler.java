@@ -1,9 +1,7 @@
 package com.netflix.zuul.proxy.framework.api;
 
-public interface HttpResponseHandler extends HttpHandler {
+public interface HttpResponseHandler {
 
-    int order();
-    String type();
     void responseReceived(FrameworkHttpRequest request, FrameworkHttpResponse response);
 
 }

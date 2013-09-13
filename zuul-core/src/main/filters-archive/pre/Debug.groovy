@@ -19,10 +19,10 @@ import com.netflix.config.DynamicBooleanProperty
 import com.netflix.config.DynamicPropertyFactory
 import com.netflix.config.DynamicStringProperty
 import com.netflix.zuul.constants.ZuulConstants
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
 
-class DebugFilter extends AbstractZuulFilter {
+class DebugFilter extends AbstractZuulPreFilter {
 
     static final DynamicBooleanProperty routingDebug = DynamicPropertyFactory.getInstance().getBooleanProperty(ZuulConstants.ZUUL_DEBUG_REQUEST, true)
     static final DynamicStringProperty debugParameter = DynamicPropertyFactory.getInstance().getStringProperty(ZuulConstants.ZUUL_DEBUG_PARAMETER, "d")

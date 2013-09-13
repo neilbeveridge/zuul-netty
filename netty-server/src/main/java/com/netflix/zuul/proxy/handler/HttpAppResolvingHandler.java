@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 
-import static com.netflix.zuul.proxy.core.Route.ROUTE_HEADER;
+import static com.netflix.zuul.proxy.framework.api.Route.ROUTE_HEADER;
 
 public class HttpAppResolvingHandler extends SimpleChannelUpstreamHandler {
     private static final Logger LOG = LoggerFactory.getLogger(HttpAppResolvingHandler.class);

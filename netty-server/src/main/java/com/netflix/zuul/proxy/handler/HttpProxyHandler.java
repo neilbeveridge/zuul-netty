@@ -17,7 +17,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.netflix.zuul.proxy.core.Route.ROUTE_HEADER;
+import static com.netflix.zuul.proxy.framework.api.Route.ROUTE_HEADER;
 
 public class HttpProxyHandler extends SimpleChannelHandler {
 

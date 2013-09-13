@@ -27,8 +27,8 @@ import com.netflix.config.DynamicIntProperty
 import com.netflix.config.DynamicPropertyFactory
 import com.netflix.zuul.constants.ZuulConstants
 import com.netflix.zuul.netty.debug.Debug
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+
 import com.netflix.zuul.util.HTTPRequestUtils
 import io.netty.handler.codec.http.HttpRequest
 import org.apache.http.Header
@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.GZIPInputStream
 
-class SimpleHostRoutingFilter extends AbstractZuulFilter {
+class SimpleHostRoutingFilter extends AbstractZuulPreFilter {
 
     public static final String CONTENT_ENCODING = "Content-Encoding";
 

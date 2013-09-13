@@ -1,7 +1,6 @@
 package com.netflix.zuul.proxy.handler;
 
 import com.netflix.zuul.proxy.framework.api.HttpResponseHandler;
-import com.netflix.zuul.proxy.framework.api.HttpResponseHandlerFactory;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
@@ -17,11 +16,11 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpResponseFrameworkHandler.class);
 
-    private final HttpResponseHandlerFactory httpResponseHandlerFactory;
+    private final HttpResponseHandler responseHandler;
     private final String tag;
 
-    public HttpResponseFrameworkHandler(String tag, HttpResponseHandlerFactory httpResponseHandlerFactory) {
-        this.httpResponseHandlerFactory = httpResponseHandlerFactory;
+    public HttpResponseFrameworkHandler(String tag, HttpResponseHandler httpResponseHandler) {
+        this.responseHandler = httpResponseHandler;
         this.tag = tag;
     }
 
@@ -39,8 +38,6 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
         if (e.getMessage() instanceof HttpResponse) {
             HttpResponse response = (HttpResponse) e.getMessage();
             HttpRequest request = (HttpRequest) ctx.getAttachment();
-
-            HttpResponseHandler responseHandler = httpResponseHandlerFactory.getInstance(tag);
 
             if (responseHandler.isEnabled()) {
                 if (responseHandler.supportedMethods() == null || Arrays.binarySearch(responseHandler.supportedMethods(), request.getMethod()) >= 0) {

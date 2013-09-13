@@ -13,36 +13,29 @@
  *      See the License for the specific language governing permissions and
  *      limitations under the License.
  */
-package scripts.preProcess
+
 
 import com.netflix.zuul.netty.debug.Debug
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
-import io.netty.handler.codec.http.HttpRequest
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
 
 /**
- * @author Mikey Cohen
- * Date: 3/12/12
- * Time: 1:51 PM
+ * @author mhawthorne
  */
-class DebugRequest extends AbstractZuulFilter {
-    DebugRequest() {
-        super('pre', 10000)
-    }
+class PreDecorationFilter extends AbstractZuulPreFilter {
 
-    @Override
-    boolean shouldFilter(RequestContext requestContext) {
-        return requestContext.debugRequest
+    PreDecorationFilter() {
+        super('pre', 5)
     }
 
     @Override
     Void doExecute(RequestContext requestContext) {
-        HttpRequest req = requestContext.getRequest()
-        Debug.addRequestDebug(requestContext, "REQUEST:: > " + req.method + " " + req.uri + " " + req.protocolVersion)
+        // sets origin
+        Debug.addRequestDebug(requestContext, "SETTING ROUTE HOST :: > http://apache.org/")
+        requestContext.setRouteHost(new URL("http://apache.org/"));
+        // sets custom header to send to the origin
+        requestContext.addOriginResponseHeader("cache-control", "max-age=3600");
 
-        req.headers().each {
-            Debug.addRequestDebug(requestContext, "REQUEST:: > ${it}")
-        }
         return null
     }
 }

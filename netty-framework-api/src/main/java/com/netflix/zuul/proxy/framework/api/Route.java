@@ -1,4 +1,4 @@
-package com.netflix.zuul.proxy.core;
+package com.netflix.zuul.proxy.framework.api;
 
 public class Route {
 

@@ -22,12 +22,12 @@ import com.netflix.config.DynamicPropertyFactory
 import com.netflix.util.Pair
 import com.netflix.zuul.constants.ZuulConstants
 import com.netflix.zuul.netty.debug.Debug
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+
 import io.netty.handler.codec.http.HttpHeaders
 import io.netty.handler.codec.http.HttpResponse
 
-class SendResponseFilter extends AbstractZuulFilter {
+class SendResponseFilter extends AbstractZuulPreFilter {
 
     static DynamicBooleanProperty INCLUDE_DEBUG_HEADER =
         DynamicPropertyFactory.getInstance().getBooleanProperty(ZuulConstants.ZUUL_INCLUDE_DEBUG_HEADER, false);

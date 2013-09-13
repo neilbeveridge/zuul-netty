@@ -15,31 +15,34 @@
  */
 package scripts.preProcess
 
-import com.netflix.config.DynamicBooleanProperty
-import com.netflix.config.DynamicPropertyFactory
-import com.netflix.config.DynamicStringProperty
-import com.netflix.zuul.constants.ZuulConstants
-import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+import com.netflix.zuul.netty.debug.Debug
 import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
 
-class DebugFilter extends AbstractZuulPreFilter {
+import io.netty.handler.codec.http.HttpRequest
 
-    static final DynamicBooleanProperty routingDebug = DynamicPropertyFactory.getInstance().getBooleanProperty(ZuulConstants.ZUUL_DEBUG_REQUEST, true)
-    static final DynamicStringProperty debugParameter = DynamicPropertyFactory.getInstance().getStringProperty(ZuulConstants.ZUUL_DEBUG_PARAMETER, "d")
-
-    DebugFilter() {
-        super('pre', 1)
+/**
+ * @author Mikey Cohen
+ * Date: 3/12/12
+ * Time: 1:51 PM
+ */
+class DebugRequest extends AbstractZuulPreFilter {
+    DebugRequest() {
+        super('pre', 10000)
     }
 
-
+    @Override
     boolean shouldFilter(RequestContext requestContext) {
-        return true;
+        return requestContext.debugRequest
     }
 
-    public Void doExecute(RequestContext requestContext) {
-        println requestContext.getRequest()
-        return null;
+    @Override
+    Void doExecute(RequestContext requestContext) {
+        HttpRequest req = requestContext.getRequest()
+        Debug.addRequestDebug(requestContext, "REQUEST:: > " + req.method + " " + req.uri + " " + req.protocolVersion)
+
+        req.headers().each {
+            Debug.addRequestDebug(requestContext, "REQUEST:: > ${it}")
+        }
+        return null
     }
-
-
 }

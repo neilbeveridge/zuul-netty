@@ -15,15 +15,15 @@
  */
 package scripts.postProcess
 
-import com.netflix.zuul.netty.filter.AbstractZuulFilter
-import com.netflix.zuul.netty.filter.RequestContext
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
+import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
 
 /**
  * @author Mikey Cohen
  * Date: 2/3/12
  * Time: 2:48 PM
  */
-class Stats extends AbstractZuulFilter {
+class Stats extends AbstractZuulPreFilter {
 
     Stats() {
         super("post", 2000)
