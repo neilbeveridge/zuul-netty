@@ -18,12 +18,13 @@
 
 
     <modules>
-        <module>zuul-core</module>
-        <module>zuul-simple-webapp</module>
+        <!--<module>zuul-core</module>-->
+        <!--<module>zuul-simple-webapp</module>-->
         <module>netty-framework-api</module>
         <module>netty-framework-plugins</module>
         <module>netty-mock-server</module>
         <module>netty-server</module>
+      <module>zuul-perf-tests</module>
     </modules>
 
     <dependencies>
