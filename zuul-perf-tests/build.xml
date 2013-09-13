@@ -1,14 +1,19 @@
 <project default="jmeter">
 
   <path id="jmeter.lib.path">
-    <fileset dir="${basedir}/tools/apache-jmeter-2.9/jmeter/extras" includes="ant-jmeter-1.1.1.jar"/>
+    <fileset dir="${basedir}/tools/apache-jmeter-2.9/extras" includes="ant-jmeter-1.1.1.jar"/>
   </path>
 
   <taskdef name="jmeter" classname="org.programmerplanet.ant.taskdefs.jmeter.JMeterTask"
            classpathref="jmeter.lib.path"/>
 
   <target name="jmeter">
+    <jmeter jmeterhome="${basedir}/tools/apache-jmeter-2.9" testplan="${basedir}/src/test/jmeter/burner.jmx"
+            resultlog="${basedir}/target/jmeter-results-100-users.jtl">
+      <jvmarg value="-Xmx512m"/>
+      <property name="request.threads" value="10"/>
+      <property name="request.loop" value="10"/>
+    </jmeter>
 
   </target>
-
 </project>

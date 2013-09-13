@@ -10,13 +10,13 @@
 
   <logger name="com.netflix.zuul.proxy.ProxyServer" level="INFO" />
 
-  <!--<logger name="com.hotels.architecture.proxy.handler" level="INFO" /> 
+  <!--<logger name="com.hotels.architecture.proxy.handler" level="INFO" />
 
   <logger name="com.hotels.architecture.proxy.handler.HttpProxyHandler" level="DEBUG" />
   <logger name="com.hotels.architecture.proxy.core.CommonsConnectionPool" level="DEBUG" />
   <logger name="com.hotels.architecture.proxy.handler.ExceptionSurfacerHandler" level="DEBUG" />-->
 
-  <root level="INFO">
+  <root level="DEBUG">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

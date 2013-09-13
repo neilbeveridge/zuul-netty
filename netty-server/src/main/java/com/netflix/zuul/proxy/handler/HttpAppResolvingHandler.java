@@ -13,7 +13,7 @@ import static com.netflix.zuul.proxy.core.Route.ROUTE_HEADER;
 
 public class HttpAppResolvingHandler extends SimpleChannelUpstreamHandler {
     private static final Logger LOG = LoggerFactory.getLogger(HttpAppResolvingHandler.class);
-    private static final String STATIC_ROUTE = "http://172.31.26.16:80";
+    private static final String STATIC_ROUTE = "http://localhost:8081";
 
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {

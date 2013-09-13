@@ -1,6 +1,7 @@
 package com.netflix.zuul.proxy;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.HttpURLConnection;
@@ -31,6 +32,7 @@ public class ProxyServerTest {
 
 
     @Test
+    @Ignore
     public void handlesHttpRequests() throws Exception {
         proxyServer = new ProxyServer(9090).run().get();
         String responseBody = sendRequest("http://localhost:9090");

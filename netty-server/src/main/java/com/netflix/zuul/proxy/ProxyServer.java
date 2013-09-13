@@ -1,8 +1,12 @@
 package com.netflix.zuul.proxy;
 
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.reporting.JmxReporter;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.logging.InternalLoggerFactory;
+import org.jboss.netty.logging.Slf4JLoggerFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -10,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
@@ -78,6 +83,15 @@ public class ProxyServer {
         final Thread thread = new Thread(future, "Proxy Server");
         thread.start();
         return future;
+    }
+
+    public static void main(String[] args) throws Exception {
+        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
+        LOG.info("Starting server...");
+        new ProxyServer(9091).run().get();
+        JmxReporter.startDefault(Metrics.defaultRegistry());
+
+        //ConsoleReporter.enable(1, TimeUnit.SECONDS);
     }
 
 }
