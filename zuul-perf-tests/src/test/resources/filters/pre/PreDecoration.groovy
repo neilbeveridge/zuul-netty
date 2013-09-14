@@ -14,10 +14,11 @@
  *      limitations under the License.
  */
 
+
+
 import com.netflix.zuul.netty.filter.AbstractZuulPreFilter
 import com.netflix.zuul.proxy.framework.api.FrameworkHttpRequest
 import com.netflix.zuul.proxy.framework.api.Route
-
 /**
  * @author mhawthorne
  */
@@ -29,6 +30,6 @@ class PreDecorationFilter extends AbstractZuulPreFilter {
 
     @Override
     void requestReceived(FrameworkHttpRequest request) {
-        println request
+        request.addHeader(Route.ROUTE_HEADER, "http://localhost:8081");
     }
 }

@@ -40,7 +40,12 @@
               <tasks>
                 <echo message="Starting Mock Server "/>
                 <java classpathref="maven.runtime.classpath"
-                      className="com.netflix.zuul.proxy.MockEndpoint"/>
+                      className="com.netflix.zuul.proxy.MockEndpoint">
+                  <permissions>
+                    <grant class="javax.management.MBeanTrustPermission" name="register"/>
+                    <grant class="java.security.AllPermission"/>
+                  </permissions>
+                </java>
                 <echo message="Mock Server started"/>
               </tasks>
 
@@ -57,7 +62,14 @@
               <tasks>
                 <echo message="Starting Server "/>
                 <java classpathref="maven.runtime.classpath"
-                      className="com.netflix.zuul.proxy.ProxyServer"/>
+                      className="com.netflix.zuul.proxy.ProxyServer">
+                  <permissions>
+                    <grant class="javax.management.MBeanTrustPermission" name="register"/>
+                    <grant class="java.security.AllPermission"/>
+                  </permissions>
+                  <arg value="9091"/>
+                  <arg value="${project.build.directory}/test-classes/filters"/>
+                </java>
                 <echo message="Server started"/>
               </tasks>
             </configuration>

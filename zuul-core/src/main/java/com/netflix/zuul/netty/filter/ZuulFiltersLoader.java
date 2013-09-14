@@ -26,8 +26,10 @@ public class ZuulFiltersLoader implements FiltersChangeNotifier {
     }
 
     private void registerPreFilters() {
-        for (File src : readZuulFiltersFrom(filtersRootPath)) {
-            filterAdded(src.toPath());
+        if (filtersRootPath.toFile().exists()) {
+            for (File src : readZuulFiltersFrom(filtersRootPath)) {
+                filterAdded(src.toPath());
+            }
         }
     }
 

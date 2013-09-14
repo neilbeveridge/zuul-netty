@@ -1,6 +1,5 @@
 package com.netflix.zuul.proxy;
 
-import com.netflix.zuul.netty.filter.FiltersChangeNotifier;
 import com.netflix.zuul.netty.filter.FiltersListener;
 import com.netflix.zuul.netty.filter.ZuulFilter;
 import com.netflix.zuul.netty.filter.ZuulPostFilter;
@@ -8,8 +7,18 @@ import com.netflix.zuul.netty.filter.ZuulPreFilter;
 import com.netflix.zuul.proxy.core.CommonsConnectionPool;
 import com.netflix.zuul.proxy.core.ConnectionPool;
 import com.netflix.zuul.proxy.framework.plugins.LoggingResponseHandler;
-import com.netflix.zuul.proxy.handler.*;
-import org.jboss.netty.channel.*;
+import com.netflix.zuul.proxy.handler.HttpAppResolvingHandler;
+import com.netflix.zuul.proxy.handler.HttpKeepAliveHandler;
+import com.netflix.zuul.proxy.handler.HttpProxyHandler;
+import com.netflix.zuul.proxy.handler.HttpRequestFrameworkHandler;
+import com.netflix.zuul.proxy.handler.HttpResponseFrameworkHandler;
+import com.netflix.zuul.proxy.handler.IdleChannelWatchdog;
+import com.netflix.zuul.proxy.handler.ServerTimingHandler;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
@@ -21,10 +30,15 @@ import org.jboss.netty.util.Timer;
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
 
-public class CommonHttpPipeline implements ChannelPipelineFactory {
+public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListener {
+
+    private final ConcurrentMap<ZuulPreFilter, Path> preFilters = new ConcurrentSkipListMap<>();
+    private final ConcurrentMap<ZuulPostFilter, Path> postFilters = new ConcurrentSkipListMap<>();
+
 
     //seconds until the TCP connection will close
     private static final int IDLE_TIMEOUT_READER = 0;
@@ -48,23 +62,16 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     private static final String START_OF_POST_FILTERS = "idle-watchdog";
     private static final String START_OF_PRE_FILTERS = "app-http-response-logger";
 
-    private final FiltersChangeNotifier filtersChangeNotifier;
 
     public CommonHttpPipeline(Timer timer) {
-        this(timer, FiltersChangeNotifier.IGNORE);
-    }
-
-    public CommonHttpPipeline(Timer timer, FiltersChangeNotifier filtersChangeNotifier) {
         this.idleStateHandler = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
         this.outboundConnectionPool = new CommonsConnectionPool(timer, OUTBOUND_CHANNEL_FACTORY);
-        this.filtersChangeNotifier = filtersChangeNotifier;
     }
 
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
-        DynamicPipeline pipeline = new DynamicPipeline();
-        filtersChangeNotifier.addFiltersListener(pipeline);
+        ChannelPipeline pipeline = Channels.pipeline();
 
         pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
@@ -74,88 +81,67 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
         pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
         pipeline.addLast("idle-watchdog", new IdleChannelWatchdog("inbound"));
 
+        addZuulPostFilters(pipeline, postFilters);
+
         pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
+
+        addZuulPreFilters(pipeline, preFilters);
 
         //request handlers
         pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
-        pipeline.addLast("app-http-app-resolver", HTTP_APP_RESOLVER);
+        //pipeline.addLast("app-http-app-resolver", HTTP_APP_RESOLVER);
 
         pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
 
         return pipeline;
     }
 
-    public static final class DynamicPipeline extends DefaultChannelPipeline implements FiltersListener {
-        private final TreeMap<ZuulPreFilter,Path> preFilters = new TreeMap<>();
-        private final TreeMap<ZuulPostFilter,Path> postFilters = new TreeMap<>();
-
-        @Override
-        public void filterAdded(Path filterPath, ZuulFilter filter) {
-            add(filterPath, filter);
+    private void addZuulPostFilters(ChannelPipeline pipeline, ConcurrentMap<ZuulPostFilter, Path> filters) {
+        for (Map.Entry<ZuulPostFilter, Path> entry : filters.entrySet()) {
+            String name = entry.getValue().toString();
+            pipeline.addLast(name, new HttpResponseFrameworkHandler(name, entry.getKey()));
         }
 
-        @Override
-        public void filterRemoved(Path filterPath, ZuulFilter filter) {
-            remove(filterPath, filter);
+    }
+
+    private void addZuulPreFilters(ChannelPipeline pipeline, ConcurrentMap<ZuulPreFilter, Path> filters) {
+        for (Map.Entry<ZuulPreFilter, Path> entry : filters.entrySet()) {
+            String name = entry.getValue().toString();
+            pipeline.addLast(name, new HttpRequestFrameworkHandler(name, entry.getKey()));
         }
+    }
 
-        private void add (Path filterPath, ZuulFilter filter) {
-            if (filter instanceof ZuulPreFilter) {
+    @Override
+    public void filterAdded(Path filterPath, ZuulFilter filter) {
+        add(filterPath, filter);
+    }
 
-                ZuulPreFilter typedFilter = (ZuulPreFilter)filter;
-                preFilters.put(typedFilter, filterPath);
+    @Override
+    public void filterRemoved(Path filterPath, ZuulFilter filter) {
+        remove(filterPath, filter);
+    }
 
-                Map.Entry<ZuulPreFilter,Path> lowerEntry = preFilters.lowerEntry(typedFilter);
-                if (lowerEntry == null) {
-                    addToPipeline(START_OF_PRE_FILTERS, filterPath.toString(), new HttpRequestFrameworkHandler(filterPath.toString(), typedFilter));
-                } else {
-                    addToPipeline(lowerEntry.getValue().toString(), filterPath.toString(), new HttpRequestFrameworkHandler(filterPath.toString(), typedFilter));
-                }
+    private void add(Path filterPath, ZuulFilter filter) {
+        if (filter instanceof ZuulPreFilter) {
+            ZuulPreFilter typedFilter = (ZuulPreFilter) filter;
+            preFilters.put(typedFilter, filterPath);
 
-            } else if (filter instanceof ZuulPostFilter) {
-
-                ZuulPostFilter typedFilter = (ZuulPostFilter)filter;
-                postFilters.put(typedFilter, filterPath);
-
-                Map.Entry<ZuulPostFilter,Path> lowerEntry = postFilters.lowerEntry(typedFilter);
-                if (lowerEntry == null) {
-                    addToPipeline(START_OF_POST_FILTERS, filterPath.toString(), new HttpResponseFrameworkHandler(filterPath.toString(), typedFilter));
-                } else {
-                    addToPipeline(lowerEntry.getValue().toString(), filterPath.toString(), new HttpResponseFrameworkHandler(filterPath.toString(), typedFilter));
-                }
-            } else {
-                throw new IllegalArgumentException("illegal filter type");
-            }
+        } else if (filter instanceof ZuulPostFilter) {
+            ZuulPostFilter typedFilter = (ZuulPostFilter) filter;
+            postFilters.put(typedFilter, filterPath);
+        } else {
+            throw new IllegalArgumentException("illegal filter type");
         }
+    }
 
-        private void remove (Path filterPath, ZuulFilter filter) {
-            if (filter instanceof ZuulPreFilter) {
-                preFilters.remove((ZuulPreFilter) filter);
-            } else if (filter instanceof ZuulPostFilter) {
-                postFilters.remove((ZuulPostFilter) filter);
-            } else {
-                throw new IllegalArgumentException("illegal filter type");
-            }
-
-            removeFromPipeline(toName(filterPath));
+    private void remove(Path filterPath, ZuulFilter filter) {
+        if (filter instanceof ZuulPreFilter) {
+            preFilters.remove(filter);
+        } else if (filter instanceof ZuulPostFilter) {
+            postFilters.remove(filter);
+        } else {
+            throw new IllegalArgumentException("illegal filter type");
         }
-
-        private void addToPipeline (String after, String name, ChannelHandler filter) {
-            if (after == null) {
-                this.addFirst(name, filter);
-            } else {
-                this.addAfter(after, name, filter);
-            }
-        }
-
-        private void removeFromPipeline (String name) {
-            this.remove(name);
-        }
-
-        private String toName (Path filterPath) {
-            return filterPath.toString();
-        }
-
     }
 
 }

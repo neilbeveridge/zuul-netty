@@ -25,7 +25,7 @@ import java.util.concurrent.FutureTask;
  */
 public class ProxyServer {
     private static final Timer TIMER = new HashedWheelTimer();
-    private static final Logger LOG = LoggerFactory.getLogger(HttpServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
 
     private final int port;
     private Channel channel;
@@ -36,6 +36,12 @@ public class ProxyServer {
         this.port = port;
     }
 
+    public ProxyServer setFiltersChangeNotifier(FiltersChangeNotifier filtersChangeNotifier) {
+        this.filtersChangeNotifier = filtersChangeNotifier;
+        return this;
+    }
+
+
     public FutureTask<ProxyServer> run() {
         FutureTask<ProxyServer> future = new FutureTask<>(new Callable<ProxyServer>() {
 
@@ -44,13 +50,14 @@ public class ProxyServer {
                 // Configure the server.
                 bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
                 FiltersChangeNotifier changeNotifier = filtersChangeNotifier != null ? filtersChangeNotifier : FiltersChangeNotifier.IGNORE;
-                CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER, changeNotifier);
+                CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER);
+                changeNotifier.addFiltersListener(pipelineFactory);
                 bootstrap.setPipelineFactory(pipelineFactory);
                 bootstrap.setOption("child.tcpNoDelay", true);
                 channel = bootstrap.bind(new InetSocketAddress(port));
                 LOG.info("server bound to port {}", port);
 
-                pipelineFactory.getPipeline();
+                LOG.info("current handlers registred {}", pipelineFactory.getPipeline().getNames());
 
                 return ProxyServer.this;
             }
@@ -93,23 +100,28 @@ public class ProxyServer {
     }
 
     public static void main(String[] args) throws Exception {
+        int port = 80;
+        String filtersPath = "";
+        if (args.length >= 2) {
+            port = Integer.parseInt(args[0]);
+            filtersPath = args[1];
+        }
+
         InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
         LOG.info("Starting server...");
 
-        FiltersChangeNotifier changeNotifier = FiltersChangeNotifier.IGNORE;
-        ProxyServer proxyServer = new ProxyServer(80)
+        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(
+                Paths.get(filtersPath));
+        ProxyServer proxyServer = new ProxyServer(port)
                 .setFiltersChangeNotifier(changeNotifier);
+
         proxyServer.run().get();
+        changeNotifier.reload();
 
 
         JmxReporter.startDefault(Metrics.defaultRegistry());
 
         //ConsoleReporter.enable(1, TimeUnit.SECONDS);
-    }
-
-    public ProxyServer setFiltersChangeNotifier(FiltersChangeNotifier filtersChangeNotifier) {
-        this.filtersChangeNotifier = filtersChangeNotifier;
-        return this;
     }
 
 
