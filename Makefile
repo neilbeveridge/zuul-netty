@@ -5,4 +5,4 @@ perf-test:
 	mvn clean install -Pperformance
 
 release:
-    mvn -f netty-server/pom.xml  assembly:assembly
+	mvn -f netty-server/pom.xml  assembly:assembly
