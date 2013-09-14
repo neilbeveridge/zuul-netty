@@ -64,6 +64,8 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = pipeline();
 
+        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
+
         pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
         pipeline.addLast("http-encoder", new HttpResponseEncoder());
@@ -75,15 +77,15 @@ public class CommonHttpPipeline implements ChannelPipelineFactory {
         pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
 
         //request handlers
-        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
-        pipeline.addLast("app-http-geo-location", HTTP_GEO_LOCATION);
-        pipeline.addLast("app-http-geo-redirection", HTTP_GEO_REDIRECTION);
-        pipeline.addLast("app-http-context-resolver", HTTP_CONTEXT_RESOLVER);
-        pipeline.addLast("app-http-global-rewrite", HTTP_GLOBAL_REWRITE);
-        pipeline.addLast("app-http-global-redirect", HTTP_GLOBAL_REDIRECT);
+        //pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
+        //pipeline.addLast("app-http-geo-location", HTTP_GEO_LOCATION);
+        //pipeline.addLast("app-http-geo-redirection", HTTP_GEO_REDIRECTION);
+        //pipeline.addLast("app-http-context-resolver", HTTP_CONTEXT_RESOLVER);
+        //pipeline.addLast("app-http-global-rewrite", HTTP_GLOBAL_REWRITE);
+        //pipeline.addLast("app-http-global-redirect", HTTP_GLOBAL_REDIRECT);
         pipeline.addLast("app-http-app-resolver", HTTP_APP_RESOLVER);
-        pipeline.addLast("app-http-app-rewrite", HTTP_APP_REWRITE);
-        pipeline.addLast("app-http-app-redirect", HTTP_APP_REDIRECT);
+        //pipeline.addLast("app-http-app-rewrite", HTTP_APP_REWRITE);
+        //pipeline.addLast("app-http-app-redirect", HTTP_APP_REDIRECT);
 
         pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
 
