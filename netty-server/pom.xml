@@ -50,7 +50,11 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <configuration>
-                    <mainClass>com.hotels.architecture.proxy.HttpServer</mainClass>
+                    <mainClass>com.netflix.zuul.proxy.ProxyServer</mainClass>
+                    <arguments>
+                        <argument>80</argument>
+                        <argument>/Users/nbeveridge/Development/git/zuul-netty/zuul-core/src/main/filters/pre</argument>
+                    </arguments>
                 </configuration>
             </plugin>
             <plugin>
