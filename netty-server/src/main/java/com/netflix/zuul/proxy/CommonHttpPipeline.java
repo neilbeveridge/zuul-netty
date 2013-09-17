@@ -51,7 +51,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final ChannelHandler HTTP_APP_RESOLVER = new HttpAppResolvingHandler();
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY.getInstance("http-response-logger"));
-    private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(128, 1048576, 1048576));
+    private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(256, 1048576, 1048576));
     private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
             Executors.newCachedThreadPool());
 
@@ -73,6 +73,10 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
+        //offload from worker threads
+        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
+
+        //httpfu
         pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
         pipeline.addLast("http-encoder", new HttpResponseEncoder());
@@ -81,16 +85,15 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
         pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
         pipeline.addLast("idle-watchdog", new IdleChannelWatchdog("inbound"));
 
+        //response handlers
         addZuulPostFilters(pipeline, postFilters);
 
         pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
 
+        //request handlers
         addZuulPreFilters(pipeline, preFilters);
 
-        //request handlers
-        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
-        //pipeline.addLast("app-http-app-resolver", HTTP_APP_RESOLVER);
-
+        //proxy
         pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
 
         return pipeline;
