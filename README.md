@@ -22,3 +22,6 @@ mvn install && sudo mvn -pl netty-server exec:java
 - Static filters.
 - Redirect support from filters.
 - Better JMX stats exposure.
+- Full filter API documentation.
+- Support for filter changes in existing connections.
+- Batch isolation of filter changes.
