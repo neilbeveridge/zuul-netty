@@ -41,7 +41,8 @@ Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=100
   688494 requests in 3.00m, 6.54GB read
 Requests/sec:   3825.85
 Transfer/sec:     37.21MB
-
+```
+```
 Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -50,7 +51,8 @@ Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=100
   593650 requests in 3.00m, 5.64GB read
 Requests/sec:   3299.71
 Transfer/sec:     32.10MB
-
+```
+```
 Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -72,7 +74,8 @@ Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=100
   879649 requests in 3.00m, 8.36GB read
 Requests/sec:   4889.49
 Transfer/sec:     47.56MB
-
+```
+```
 Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
