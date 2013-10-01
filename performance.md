@@ -33,7 +33,7 @@ Benchmark parameters:
 I used 3 clients in order not to saturate the network. I wasn't able to saturate the CPU on the proxy – it always had 30% idling. I imagine that the NIC was saturated on the proxy as it was handling inbound and outbound traffic. The three clients gave the following results – you can see the raised latency caused by network saturation:
 
 ```
-Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency   139.88ms  113.00ms   1.11s    87.88%
@@ -43,7 +43,7 @@ Requests/sec:   3825.85
 Transfer/sec:     37.21MB
 ```
 ```
-Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency   166.01ms  144.06ms 992.36ms   89.92%
@@ -53,7 +53,7 @@ Requests/sec:   3299.71
 Transfer/sec:     32.10MB
 ```
 ```
-Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency   237.02ms  244.94ms   1.22s    81.00%
@@ -66,7 +66,7 @@ Transfer/sec:     31.71MB
 If I run the same on only two clients then the proxy idles at 46% and I see the following results at the clients:
 
 ```
-Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency    83.11ms   18.77ms 567.60ms   98.00%
@@ -76,7 +76,7 @@ Requests/sec:   4889.49
 Transfer/sec:     47.56MB
 ```
 ```
-Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency    83.64ms   21.74ms 455.94ms   98.15%
