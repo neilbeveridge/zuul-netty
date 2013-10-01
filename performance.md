@@ -10,6 +10,7 @@ Benchmark parameters:
 CPU Saturated at ~1300TPS. Further detail to follow.
 
 #### Zuul-Netty Result
+```
 Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   100 threads and 200 connections
   Thread Stats  Avg      Stdev    Max  +/- Stdev
@@ -18,6 +19,7 @@ Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
   136926 requests in 0.97m, 1.30GB read
 Requests/sec:  2360.63
 Transfer/sec:    22.96MB
+```
 
 ### High Performance Benchmark
 The proxy instance type was improved in order to find a point when it would become network-bound, making best use of the resources. ELBs were found to be unreliable in terms of performance and so the proxy implemented an internal randomised load balancer.
@@ -30,7 +32,8 @@ Benchmark parameters:
 
 I used 3 clients in order not to saturate the network. I wasn't able to saturate the CPU on the proxy – it always had 30% idling. I imagine that the NIC was saturated on the proxy as it was handling inbound and outbound traffic. The three clients gave the following results – you can see the raised latency caused by network saturation:
 
-unning 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
+```
+Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
     Latency   139.88ms  113.00ms   1.11s    87.88%
@@ -56,9 +59,11 @@ Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=100
   586688 requests in 3.00m, 5.57GB read
 Requests/sec:   3259.44
 Transfer/sec:     31.71MB
+```
 
 If I run the same on only two clients then the proxy idles at 46% and I see the following results at the clients:
 
+```
 Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=10000&dither=50
   400 threads and 700 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
@@ -76,5 +81,6 @@ Running 3m test @ http://ip-172-31-24-110.us-west-1.compute.internal/?length=100
   879316 requests in 3.00m, 8.35GB read
 Requests/sec:   4885.35
 Transfer/sec:     47.52MB
+```
 
 Further direct vanilla-netty bakeoff data to follow.
