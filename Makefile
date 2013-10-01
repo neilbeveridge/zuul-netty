@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-REMOTE_HOST=ec2-54-215-236-136.us-west-1.compute.amazonaws.com
+REMOTE_HOST=ec2-54-215-240-14.us-west-1.compute.amazonaws.com
 
 # Performance Test
 perf-test:
