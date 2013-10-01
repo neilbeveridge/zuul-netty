@@ -7,7 +7,7 @@ Benchmark parameters:
 - 10k stub payload, GZIP, 50ms dither.
 
 #### Vanilla Zuul Result
-CPU Saturated at ~1300TPS. See https://wwww.github.com/neilbeveridge/CloudPrize/Submission.md.
+CPU Saturated at ~1300TPS. See https://github.com/neilbeveridge/Cloud-Prize/blob/master/Submission.md.
 
 #### Zuul-Netty Result
 ```
