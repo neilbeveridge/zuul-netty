@@ -30,6 +30,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private final ConcurrentMap<ZuulPreFilter, Path> preFilters = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<ZuulPostFilter, Path> postFilters = new ConcurrentSkipListMap<>();
 
+    private static final String PROPERTY_WORKERS = "com.netflix.workers";
 
     //seconds until the TCP connection will close
     private static final int IDLE_TIMEOUT_READER = 0;
@@ -42,7 +43,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final ChannelHandler HTTP_APP_RESOLVER = new HttpAppResolvingHandler();
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY.getInstance("http-response-logger"));
-    private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(100, 500*1024*1024, 1024*1024*1024, 100, TimeUnit.MILLISECONDS));
+    private static final ChannelHandler APP_EXECUTION_HANDLER;
     private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
             Executors.newCachedThreadPool());
     private static final ChannelHandler SERVER_TIMING_HANDLER = new ServerTimingHandler("inbound");
@@ -54,6 +55,11 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
 
     private static final String START_OF_POST_FILTERS = "idle-watchdog";
     private static final String START_OF_PRE_FILTERS = "app-http-response-logger";
+
+    static {
+        int workers = System.getProperty(PROPERTY_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_WORKERS)):Runtime.getRuntime().availableProcessors();
+        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 500*1024*1024, 1024*1024*1024, 100, TimeUnit.MILLISECONDS));
+    }
 
 
     public CommonHttpPipeline(Timer timer) {
