@@ -7,18 +7,8 @@ import com.netflix.zuul.netty.filter.ZuulPreFilter;
 import com.netflix.zuul.proxy.core.CommonsConnectionPool;
 import com.netflix.zuul.proxy.core.ConnectionPool;
 import com.netflix.zuul.proxy.framework.plugins.LoggingResponseHandler;
-import com.netflix.zuul.proxy.handler.HttpAppResolvingHandler;
-import com.netflix.zuul.proxy.handler.HttpKeepAliveHandler;
-import com.netflix.zuul.proxy.handler.HttpProxyHandler;
-import com.netflix.zuul.proxy.handler.HttpRequestFrameworkHandler;
-import com.netflix.zuul.proxy.handler.HttpResponseFrameworkHandler;
-import com.netflix.zuul.proxy.handler.IdleChannelWatchdog;
-import com.netflix.zuul.proxy.handler.ServerTimingHandler;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
+import com.netflix.zuul.proxy.handler.*;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
@@ -33,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListener {
 
@@ -46,14 +37,16 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final int IDLE_TIMEOUT_BOTH = 10;
 
     private static final boolean IS_KEEP_ALIVE_SUPPORTED = true;
-    private static final boolean IS_REQUEST_CHUNKED_ENABLED = true;
+    private static final boolean IS_REQUEST_CHUNKED_ENABLED = false;
 
     private static final ChannelHandler HTTP_APP_RESOLVER = new HttpAppResolvingHandler();
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY.getInstance("http-response-logger"));
-    private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(256, 1048576, 1048576));
+    private static final ChannelHandler APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(100, 500*1024*1024, 1024*1024*1024, 100, TimeUnit.MILLISECONDS));
     private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
             Executors.newCachedThreadPool());
+    private static final ChannelHandler SERVER_TIMING_HANDLER = new ServerTimingHandler("inbound");
+    private static final ChannelHandler IDLE_CHANNEL_WATCHDOG_HANDLER = new IdleChannelWatchdog("inbound");
 
     private final ConnectionPool outboundConnectionPool;
     private final ChannelHandler idleStateHandler;
@@ -73,17 +66,20 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
+        //httpfu io
+        pipeline.addLast("socket-suspension", new SocketSuspensionHandler());
+        pipeline.addLast("idle-detection", idleStateHandler);
+        pipeline.addLast("http-decoder", new HttpRequestDecoder());
+        pipeline.addLast("http-encoder", new HttpResponseEncoder());
+
         //offload from worker threads
         pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
 
         //httpfu
-        pipeline.addLast("idle-detection", idleStateHandler);
-        pipeline.addLast("http-decoder", new HttpRequestDecoder());
-        pipeline.addLast("http-encoder", new HttpResponseEncoder());
         pipeline.addLast("http-deflater", new HttpContentCompressor());
-        pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"));
+        pipeline.addLast("edge-timer", SERVER_TIMING_HANDLER);
         pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
-        pipeline.addLast("idle-watchdog", new IdleChannelWatchdog("inbound"));
+        pipeline.addLast("idle-watchdog", IDLE_CHANNEL_WATCHDOG_HANDLER);
 
         //response handlers
         addZuulPostFilters(pipeline, postFilters);

@@ -5,6 +5,7 @@ import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.reporting.JmxReporter;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.AdaptiveReceiveBufferSizePredictor;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -53,7 +54,14 @@ public class ProxyServer {
                 CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER);
                 changeNotifier.addFiltersListener(pipelineFactory);
                 bootstrap.setPipelineFactory(pipelineFactory);
+
                 bootstrap.setOption("child.tcpNoDelay", true);
+                bootstrap.setOption("child.connectTimeoutMillis", 2000);
+                /*bootstrap.setOption("child.writeBufferHighWaterMark", true);
+                bootstrap.setOption("child.writeBufferLowWaterMark", true);
+                bootstrap.setOption("child.writeSpinCount", true);*/
+                bootstrap.setOption("child.receiveBufferSizePredictor", new AdaptiveReceiveBufferSizePredictor());
+
                 channel = bootstrap.bind(new InetSocketAddress(port));
                 LOG.info("server bound to port {}", port);
 
@@ -100,8 +108,8 @@ public class ProxyServer {
     }
 
     public static void main(String[] args) throws Exception {
-        int port = 80;
-        String filtersPath = "";
+        int port = 8080;
+        String filtersPath = "/Users/nbeveridge/Development/git/zuul-netty/zuul-core/src/main/filters/pre";
         if (args.length >= 2) {
             port = Integer.parseInt(args[0]);
             filtersPath = args[1];

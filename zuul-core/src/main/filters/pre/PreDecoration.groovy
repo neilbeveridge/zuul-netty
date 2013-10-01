@@ -30,6 +30,6 @@ class PreDecorationFilter extends AbstractZuulPreFilter {
 
     @Override
     void requestReceived(FrameworkHttpRequest request) {
-        request.addHeader(Route.ROUTE_HEADER, "http://google.com:80");
+        request.addHeader(Route.ROUTE_HEADER, "http://localhost:8081");
     }
 }

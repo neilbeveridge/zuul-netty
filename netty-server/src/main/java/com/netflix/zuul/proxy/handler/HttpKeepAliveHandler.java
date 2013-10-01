@@ -27,13 +27,16 @@ public class HttpKeepAliveHandler extends IdleStateAwareChannelHandler {
 
     @Override
     public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+        HttpRequest request = (HttpRequest) ctx.getAttachment();
+
         if (e.getMessage() instanceof HttpResponse) {
 
             HttpResponse response = (HttpResponse) e.getMessage();
-            HttpRequest request = (HttpRequest) ctx.getAttachment();
 
             if (!response.isChunked()) {
+
                 if (isKeepAliveSupported && isKeepAlive(request)) {
+
                     LOG.debug("keep-alive IS implemented for this connection");
 
                     // Add 'Content-Length' header only for a keep-alive connection.
@@ -41,16 +44,40 @@ public class HttpKeepAliveHandler extends IdleStateAwareChannelHandler {
                     // Add keep alive header as per:
                     // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
                     response.setHeader(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+
                 } else {
+
+                    //not chunked and keep alive not supported, closing connection
                     LOG.debug("keep-alive NOT implemented for this connection");
                     e.getFuture().addListener(ChannelFutureListener.CLOSE);
+
                 }
+
             } else {
+                //response is chunked
+
+                //don't send a content-length for chunked transfer-encoding
                 response.removeHeader(CONTENT_LENGTH);
-                LOG.debug("keep-alive IMPLIED for this connection as it is chunked");
+
+                //keep-alive explicitly off
+                if (!isKeepAliveSupported || !isKeepAlive(request)) {
+                    response.removeHeader(CONNECTION);
+                    LOG.debug("keep-alive NOT implemented for this connection as it is explicitly turned off");
+                } else {
+                    LOG.debug("keep-alive IMPLIED for this connection as it is chunked");
+                }
             }
         } else if (e.getMessage() instanceof HttpChunk) {
-            LOG.debug("found chunk {}", ((HttpChunk)e.getMessage()).getContent());
+            LOG.debug("found chunk");
+            if (((HttpChunk) e.getMessage()).isLast()) {
+
+                if (!isKeepAliveSupported || !isKeepAlive(request)) {
+                    //keep alive explicitly off
+                    LOG.debug("reached the last chunk and keep alive is turned off so closing the connection");
+                    e.getFuture().addListener(ChannelFutureListener.CLOSE);
+                }
+
+            }
         } else {
             LOG.debug("found something else");
         }

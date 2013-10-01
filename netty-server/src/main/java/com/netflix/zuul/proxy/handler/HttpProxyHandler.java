@@ -155,9 +155,9 @@ public class HttpProxyHandler extends SimpleChannelHandler {
 
             //support for throttling driven by socket saturation
             if (!outboundChannel.isWritable()) {
-                inboundChannel.setReadable(false);
+                //inboundChannel.setReadable(false);
             } else {
-                inboundChannel.setReadable(true);
+                //inboundChannel.setReadable(true);
             }
 
             super.channelInterestChanged(ctx, e);
