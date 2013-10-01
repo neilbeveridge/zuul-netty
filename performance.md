@@ -7,7 +7,7 @@ Benchmark parameters:
 - 10k stub payload, GZIP, 50ms dither.
 
 #### Vanilla Zuul Result
-CPU Saturated at ~1300TPS. See https://github.com/neilbeveridge/Cloud-Prize/blob/master/Submission.md.
+Latency and CPU increase at ~1300TPS caused by fixed-size outbound connection pool. See https://github.com/neilbeveridge/Cloud-Prize/blob/master/Submission.md.
 
 #### Zuul-Netty Result
 ```
