@@ -28,11 +28,11 @@ import java.util.concurrent.ThreadLocalRandom
 class PreDecorationFilter extends AbstractZuulPreFilter {
 
     private static final String[] HOSTS = [
-        "ip-172-31-22-187.us-west-1.compute.internal",
-        "ip-172-31-29-235.us-west-1.compute.internal",
-        "ip-172-31-31-215.us-west-1.compute.internal",
-        "ip-172-31-31-213.us-west-1.compute.internal",
-        "ip-172-31-31-214.us-west-1.compute.internal"
+        "http://ip-172-31-22-187.us-west-1.compute.internal:80",
+        "http://ip-172-31-29-235.us-west-1.compute.internal:80",
+        "http://ip-172-31-31-215.us-west-1.compute.internal:80",
+        "http://ip-172-31-31-213.us-west-1.compute.internal:80",
+        "http://ip-172-31-31-214.us-west-1.compute.internal:80"
     ]
 
     PreDecorationFilter() {

@@ -12,5 +12,5 @@ release:
 deploy:
 	mvn -Dmaven.test.skip=true clean install
 	mvn -Dmaven.test.skip=true -pl netty-server assembly:assembly
-	scp -i ~/Downloads/nbev-zuul.pem netty-server/target/netty-server-1.0-SNAPSHOT-jar-with-dependencies.jar ec2-user@$(REMOTE_HOST):
+#	scp -i ~/Downloads/nbev-zuul.pem netty-server/target/netty-server-1.0-SNAPSHOT-jar-with-dependencies.jar ec2-user@$(REMOTE_HOST):
 
