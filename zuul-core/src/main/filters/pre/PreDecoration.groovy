@@ -28,11 +28,7 @@ import java.util.concurrent.ThreadLocalRandom
 class PreDecorationFilter extends AbstractZuulPreFilter {
 
     private static final String[] HOSTS = [
-        "http://ip-172-31-22-187.us-west-1.compute.internal:80",
-        "http://ip-172-31-29-235.us-west-1.compute.internal:80",
-        "http://ip-172-31-31-215.us-west-1.compute.internal:80",
-        "http://ip-172-31-31-213.us-west-1.compute.internal:80",
-        "http://ip-172-31-31-214.us-west-1.compute.internal:80"
+        "http://www.google.com:80"
     ]
 
     PreDecorationFilter() {
@@ -41,6 +37,8 @@ class PreDecorationFilter extends AbstractZuulPreFilter {
 
     @Override
     void requestReceived(FrameworkHttpRequest request) {
-        request.addHeader(Route.ROUTE_HEADER, HOSTS[ThreadLocalRandom.current().nextInt(HOSTS.length)]);
+        String host = HOSTS[ThreadLocalRandom.current().nextInt(HOSTS.length)];
+        request.addHeader(Route.ROUTE_HEADER, host);
+        request.addHeader("Host", host);
     }
 }

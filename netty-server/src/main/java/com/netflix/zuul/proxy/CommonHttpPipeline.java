@@ -60,7 +60,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
 
     static {
         int workers = System.getProperty(PROPERTY_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_WORKERS)):Runtime.getRuntime().availableProcessors();
-        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 500*1024*1024, 1024*1024*1024, 100, TimeUnit.MILLISECONDS));
+        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 5*1024*1024, 250*1024*1024, 100, TimeUnit.MILLISECONDS));
         LOG.info("spawning {} worker threads", workers);
     }
 
