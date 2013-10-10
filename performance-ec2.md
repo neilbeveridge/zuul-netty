@@ -7,7 +7,7 @@ Benchmark parameters:
 - 10k stub payload, GZIP, 50ms dither.
 
 #### Vanilla Zuul Result
-CPU Saturated at ~1300TPS. Further detail to follow.
+Latency and CPU increase at ~1300TPS caused by blocking worker threads. See https://github.com/neilbeveridge/Cloud-Prize/blob/master/Submission.md.
 
 #### Zuul-Netty Result
 ```
