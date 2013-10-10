@@ -57,23 +57,14 @@ Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|9
 ![CPU Utilisation](images/cpu.png)
 ![RunQueue Length](images/qlen.png)
 
-![Tomcat: CPU Utilisation](images/tomcat/cpu.png)
-![Netty: CPU Utilisation](images/netty/cpu.png)
-
-![Tomcat: Memory Free](images/tomcat/memfree.png)
-![Netty: Memory Free](images/netty/memfree.png)
-
-![Tomcat: Network IO](images/tomcat/network.png)
-![Netty: Network IO](images/netty/network.png)
-
-![Tomcat: RunQueue Length](images/tomcat/runq.png)
-![Netty: RunQueue Length](images/netty/runq.png)
-
-![Tomcat: Context Switches](images/tomcat/cswitch.png)
-![Netty: Context Switches](images/netty/cswitch.png)
-
-![Tomcat: GC](images/tomcat/gc.png)
-![Netty: GC](images/netty/gc.png)
+Zuul running on Tomcat                                      |Zuul-Netty
+:-:                                                         |:-:
+![Tomcat: CPU Utilisation](images/tomcat/cpu.png)           |![Netty: CPU Utilisation](images/netty/cpu.png)
+![Tomcat: Memory Free](images/tomcat/memfree.png)           |![Netty: Memory Free](images/netty/memfree.png)
+![Tomcat: Network IO](images/tomcat/network.png)            |![Netty: Network IO](images/netty/network.png)
+![Tomcat: RunQueue Length](images/tomcat/runq.png)          |![Netty: RunQueue Length](images/netty/runq.png)
+![Tomcat: Context Switches](images/tomcat/cswitch.png)      |![Netty: Context Switches](images/netty/cswitch.png)
+![Tomcat: GC](images/tomcat/gc.png)                         |![Netty: GC](images/netty/gc.png)
 
 ### Take Aways
 -   Non-blocking inbound and outbound IO performs much better in terms of linear scalability. A caveat is that all processing filters employed in the proxy must never block the execution stage threads i.e. they must use non-blocking outbound IO e.g. if config services are being contacted by filters synchronously.
