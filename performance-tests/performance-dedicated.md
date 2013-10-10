@@ -15,17 +15,6 @@
 - Unspecified Production-grade, low-latency networking equipment utilised for interconnects.
 - Mixture of WRK load generator and HP LoadRunner used to provide a sample probe.
 
-## Positives of Netty
- -  Non blocking inbound and outbound – We were able to handle high number of concurrent connections with a significantly low number of threads. This has helped reduce the CPU utilization spent on the Selectors.
- -  Efficiently utilizes the system resources like CPU/network. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
- -  High number of connections doesn’t affect the stability of the ZUUL proxy instance, whereas with Tomcat the instance became unresponsive when the worker threads reach limits.
- -  Memory utilization is very efficient as the temporary stacks created by the number of threads are much less due to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
-
-## Observed Throughput-Limiting Effects
- -  In Netty based ZUUL we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the ZUUL proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
- -  In tomcat the worker threads increases with increase in concurrent connections and leveled off as soon as the throughput settled.
- -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
-
 ## Configuration
 ### TCP Parameters
 - Increase the OS’s receive and write buffers, net.core.rmem\_max and net.core.wmem_max.
@@ -73,6 +62,18 @@ Zuul running on Tomcat                                      |Zuul-Netty
 ![Tomcat: RunQueue Length](images/tomcat/runq.png)          |![Netty: RunQueue Length](images/netty/runq.png)
 ![Tomcat: Context Switches](images/tomcat/cswitch.png)      |![Netty: Context Switches](images/netty/cswitch.png)
 ![Tomcat: GC](images/tomcat/gc.png)                         |![Netty: GC](images/netty/gc.png)
+
+## Observed Benefits of Zuul-Netty
+It is clear that Zuul-Netty has a much more stable performance characteristic than Zuul-Tomcat.
+ -  Non blocking inbound AND outbound IO – we were able to handle high number of concurrent connections with a significantly low number of threads. This has helped reduce the CPU utilization spent on the Selectors.
+ -  Efficiently utilizes the system resources like CPU/network. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
+ -  High number of connections doesn’t affect the stability of the ZUUL proxy instance, whereas with Tomcat the instance became unresponsive when the worker threads reach limits.
+ -  Memory utilization is very efficient as the temporary stacks created by the number of threads are much less due to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
+
+## Observed Limitations of Zuul-Tomcat
+ -  In Netty based ZUUL we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the ZUUL proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
+ -  In tomcat the worker threads increases with increase in concurrent connections and leveled off as soon as the throughput settled.
+ -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
 
 ### Take Aways
 -   Non-blocking inbound and outbound IO performs much better in terms of linear scalability. A caveat is that all processing filters employed in the proxy must never block the execution stage threads i.e. they must use non-blocking outbound IO e.g. if config services are being contacted by filters synchronously.
