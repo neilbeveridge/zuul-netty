@@ -17,6 +17,8 @@ import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -26,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListener {
+    private static final Logger LOG = LoggerFactory.getLogger(CommonHttpPipeline.class);
 
     private final ConcurrentMap<ZuulPreFilter, Path> preFilters = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<ZuulPostFilter, Path> postFilters = new ConcurrentSkipListMap<>();
@@ -44,8 +47,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY.getInstance("http-response-logger"));
     private static final ChannelHandler APP_EXECUTION_HANDLER;
-    private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(),
-            Executors.newCachedThreadPool());
+    private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
     private static final ChannelHandler SERVER_TIMING_HANDLER = new ServerTimingHandler("inbound");
     private static final ChannelHandler IDLE_CHANNEL_WATCHDOG_HANDLER = new IdleChannelWatchdog("inbound");
 
@@ -58,7 +60,8 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
 
     static {
         int workers = System.getProperty(PROPERTY_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_WORKERS)):Runtime.getRuntime().availableProcessors();
-        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 500*1024*1024, 1024*1024*1024, 100, TimeUnit.MILLISECONDS));
+        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 5*1024*1024, 250*1024*1024, 100, TimeUnit.MILLISECONDS));
+        LOG.info("spawning {} worker threads", workers);
     }
 
 
@@ -72,14 +75,14 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
 
+        //offload from worker threads
+        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
+
         //httpfu io
         pipeline.addLast("socket-suspension", new SocketSuspensionHandler());
         pipeline.addLast("idle-detection", idleStateHandler);
         pipeline.addLast("http-decoder", new HttpRequestDecoder());
         pipeline.addLast("http-encoder", new HttpResponseEncoder());
-
-        //offload from worker threads
-        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
 
         //httpfu
         pipeline.addLast("http-deflater", new HttpContentCompressor());
