@@ -57,13 +57,11 @@ Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|9
 ![CPU Utilisation](images/cpu.png)
 ![RunQueue Length](images/qlen.png)
 
-![Tomcat: CPU Utilisation](images/tomcat/cpu.png)
-![Netty: CPU Utilisation](images/netty/cpu.png)
-
-![Tomcat: Memory Free](images/tomcat/memfree.png)
-![Netty: Memory Free](images/netty/memfree.png)
-
-![Tomcat: Network IO](images/tomcat/network.png)
+Zuul running on Tomcat                                      |Zuul-Netty
+:-:                                                         |:-:
+![Tomcat: CPU Utilisation](images/tomcat/cpu.png)           |![Netty: CPU Utilisation](images/netty/cpu.png)
+![Tomcat: Memory Free](images/tomcat/memfree.png)           |![Netty: Memory Free](images/netty/memfree.png)
+![Tomcat: Network IO](images/tomcat/network.png)        
 ![Netty: Network IO](images/netty/network.png)
 
 ![Tomcat: RunQueue Length](images/tomcat/runq.png)
