@@ -1,4 +1,4 @@
-# zuul-netty Performance Testing - DRAFT
+# zuul-netty Performance Testing
 
 ### m1.medium Benchmark 
 This benchmark exists as it's easy to saturate the hardware, surfacing the traits of the implementation.
@@ -30,7 +30,7 @@ Benchmark parameters:
 - Stub: 5 x m3.2xl
 - Proxy: 1 x m3.2xl
 
-I used 3 clients in order not to saturate the network. I wasn't able to saturate the CPU on the proxy – it always had 30% idling. I imagine that the NIC was saturated on the proxy as it was handling inbound and outbound traffic. The three clients gave the following results – you can see the raised latency caused by network saturation:
+I used 3 clients in order not to saturate the network. I wasn't able to saturate the CPU on the proxy – it always had 30% idling. The NIC was saturated on the proxy as it was handling inbound and outbound traffic. The three clients gave the following results – you can see the raised latency caused by network saturation:
 
 ```
 Running 3m test @ http://---.us-west-1.compute.internal/?length=10000&dither=50
@@ -86,4 +86,3 @@ Requests/sec:   4885.35
 Transfer/sec:     47.52MB
 ```
 
-Further direct vanilla-netty bakeoff data to follow.
