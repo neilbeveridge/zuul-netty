@@ -9,6 +9,12 @@
 -   Netty response times for maximum load of 2000 connections was around 71 ms, that is a total of ~21ms spent on the wire and in the proxy. The difference in the response time at each load level was almost uniform, this can be attributed to the overhead of processing the increasing server load [overhead of the HTTP codec/network latencies within the stream, @max load we were using 680Mbps on a 1G NIC and network saturation effects contributed to an increase in latency at this load level].
 -   Tomcat response time started to increase significantly with increasing connections, which is a composite effect of blocking connections, frequent GC and high number of busy worker threads. This is reflected in the Operating system’s run queue length and the JVM’s GC throughput. Comparison graphs can be found below.
 
+## Equipment and Tool Specification
+- Intel(R) Xeon(R) CPU E5430 @ 2.66GHz (dual quad core - total 8 CPU cores).
+- Single 1Gbps NICs employed on each server.
+- Unspecified Production-grade, low-latency networking equipment utilised for interconnects.
+- Mixture of WRK load generator and HP LoadRunner used to provide a sample probe.
+
 ## Positives of Netty
  -  Non blocking inbound and outbound – We were able to handle high number of concurrent connections with a significantly low number of threads. This has helped reduce the CPU utilization spent on the Selectors.
  -  Efficiently utilizes the system resources like CPU/network. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
