@@ -59,14 +59,19 @@ Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|9
 
 ![Tomcat: CPU Utilisation](images/tomcat/cpu.png)
 ![Netty: CPU Utilisation](images/netty/cpu.png)
+
 ![Tomcat: Memory Free](images/tomcat/memfree.png)
 ![Netty: Memory Free](images/netty/memfree.png)
+
 ![Tomcat: Network IO](images/tomcat/network.png)
 ![Netty: Network IO](images/netty/network.png)
+
 ![Tomcat: RunQueue Length](images/tomcat/runq.png)
 ![Netty: RunQueue Length](images/netty/runq.png)
+
 ![Tomcat: Context Switches](images/tomcat/cswitch.png)
 ![Netty: Context Switches](images/netty/cswitch.png)
+
 ![Tomcat: GC](images/tomcat/gc.png)
 ![Netty: GC](images/netty/gc.png)
 
