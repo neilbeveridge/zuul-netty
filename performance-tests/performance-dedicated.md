@@ -55,7 +55,7 @@ Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|9
 ![TP75](images/tp75.png)
 ![Network IO](images/network.png)
 ![CPU Utilisation](images/cpu.png)
-![RunQueue Length](images/runq.png)
+![RunQueue Length](images/qlen.png)
 
 ![Tomcat: CPU Utilisation](images/tomcat/cpu.png)
 ![Netty: CPU Utilisation](images/netty/cpu.png)
