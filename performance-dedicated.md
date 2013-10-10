@@ -50,6 +50,22 @@ Netty	|1900	        |27585	    |68.74	            |62.19	        |72.91      	|9
 Tomcat	|2000	        |15564	    |159.26	            |120.93	        |166.95     	|218.64        	|65.08	|16.75	    |54500.02	        |291.12
 Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|96.34      	|78.96	|9.71	    |48146.36       	|682.39
 
+![TPS](/images/tps.png)
+![TP50](/images/tp50.png)
+![TP75](/images/tp75.png)
+![TP75](/images/network.png)
+![TP75](/images/cpu.png)
+![TP75](/images/runq.png)
+
+
+![TP75](/images/tomcat/cpu.png)
+![TP75](/images/netty/cpu.png)
+![TP75](/images/tomcat/memfree.png)
+![TP75](/images/netty/memfree.png)
+![TP75](/images/tomcat/network.png)
+![TP75](/images/netty/network.png)
+![TP75](/images/tomcat/runq.png)
+![TP75](/images/netty/runq.png)
 
 ### Take Aways
 -   Non-blocking inbound and outbound IO performs much better in terms of linear scalability. A caveat is that all processing filters employed in the proxy must never block the execution stage threads i.e. they must use non-blocking outbound IO e.g. if config services are being contacted by filters synchronously.
