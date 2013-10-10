@@ -50,26 +50,30 @@ Netty	|1900	        |27585	    |68.74	            |62.19	        |72.91      	|9
 Tomcat	|2000	        |15564	    |159.26	            |120.93	        |166.95     	|218.64        	|65.08	|16.75	    |54500.02	        |291.12
 Netty	|2000	        |28196	    |70.87	            |63.92	        |75.58      	|96.34      	|78.96	|9.71	    |48146.36       	|682.39
 
-![TPS](/images/tps.png)
-![TP50](/images/tp50.png)
-![TP75](/images/tp75.png)
-![Network IO](/images/network.png)
-![CPU Utilisation](/images/cpu.png)
-![RunQueue Length](/images/runq.png)
+![TPS](images/tps.png)
+![TP50](images/tp50.png)
+![TP75](images/tp75.png)
+![Network IO](images/network.png)
+![CPU Utilisation](images/cpu.png)
+![RunQueue Length](images/qlen.png)
 
+![Tomcat: CPU Utilisation](images/tomcat/cpu.png)
+![Netty: CPU Utilisation](images/netty/cpu.png)
 
-![Tomcat: CPU Utilisation](/images/tomcat/cpu.png)
-![Netty: CPU Utilisation](/images/netty/cpu.png)
-![Tomcat: Memory Free](/images/tomcat/memfree.png)
-![Netty: Memory Free](/images/netty/memfree.png)
-![Tomcat: Network IO](/images/tomcat/network.png)
-![Netty: Network IO](/images/netty/network.png)
-![Tomcat: RunQueue Length](/images/tomcat/runq.png)
-![Netty: RunQueue Length](/images/netty/runq.png)
-![Tomcat: Context Switches](/images/tomcat/cswitch.png)
-![Netty: Context Switches](/images/netty/cswitch.png)
-![Tomcat: GC](/images/tomcat/gc.png)
-![Netty: GC](/images/netty/gc.png)
+![Tomcat: Memory Free](images/tomcat/memfree.png)
+![Netty: Memory Free](images/netty/memfree.png)
+
+![Tomcat: Network IO](images/tomcat/network.png)
+![Netty: Network IO](images/netty/network.png)
+
+![Tomcat: RunQueue Length](images/tomcat/runq.png)
+![Netty: RunQueue Length](images/netty/runq.png)
+
+![Tomcat: Context Switches](images/tomcat/cswitch.png)
+![Netty: Context Switches](images/netty/cswitch.png)
+
+![Tomcat: GC](images/tomcat/gc.png)
+![Netty: GC](images/netty/gc.png)
 
 ### Take Aways
 -   Non-blocking inbound and outbound IO performs much better in terms of linear scalability. A caveat is that all processing filters employed in the proxy must never block the execution stage threads i.e. they must use non-blocking outbound IO e.g. if config services are being contacted by filters synchronously.
