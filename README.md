@@ -16,7 +16,6 @@ mvn install && sudo mvn -pl netty-server exec:java
 - No dynamic reload currently supported (coming soon.).
 
 ### Upcoming work
-- Performance improvements and fixes.
 - Dynamic filter reload.
 - Post (-proxy) filters.
 - Static filters.
@@ -25,3 +24,7 @@ mvn install && sudo mvn -pl netty-server exec:java
 - Full filter API documentation.
 - Support for filter changes in existing connections.
 - Batch isolation of filter changes.
+
+### Performance Results
+- Testing carried out on [m1.m and m3.2xl instance types in AWS EC2](/performance-tests/performance-ec2.md).
+- Testing carried out on [dedicated hardware inside a proprietry datacenter](/performance-tests/performance-ec2.md).
