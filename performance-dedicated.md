@@ -1,4 +1,4 @@
-# zuul-netty Performance Testing on Dedicated Hardware
+# Performance Testing on Dedicated Hardware
 
 ## Highlights
 
