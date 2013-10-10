@@ -24,7 +24,7 @@
 ## Observed Throughput-Limiting Effects
  -  In Netty based ZUUL we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the ZUUL proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
  -  In tomcat the worker threads increases with increase in concurrent connections and leveled off as soon as the throughput settled.
- -  The CPU Load Averages for Tomcat quickly outstrip Netty, as this passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
+ -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
 
 ## Configuration
 ### TCP Parameters
