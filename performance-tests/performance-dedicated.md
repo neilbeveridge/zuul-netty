@@ -32,7 +32,7 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -XX:+PrintFlagsFinal
 
 ##### Framework
--   -Dxorg.jboss.netty.epollBugWorkaround=true 
+-   -Dxorg.jboss.netty.epollBugWorkaround=true
     *- enable the epoll CPU fix, although not experienced*
 -   -Dxorg.jboss.netty.selectTimeout=10        
     *- the default, has affect only when idling.*
