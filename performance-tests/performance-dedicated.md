@@ -142,9 +142,9 @@ It is clear that Zuul-Netty has a much more stable performance characteristic th
  -  Memory utilization is very efficient as the temporary stacks created by the number of threads are hugely less thanks to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
 
 ### Observed Limitations of Zuul-Tomcat
- -  In Zuul-Netty we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the Zuul-Netty proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
- -  In Zuul-Tomcat the worker threads increased with the increase in concurrent connections and leveled off as soon as the throughput settled.
- -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
+ -  In Zuul-Netty we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the Zuul-Netty proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency. In Zuul-Tomcat, we observed that context switching contributed by the high number of worker threads was high and remained high throughout, in turn causing inefficient use of CPU resource.
+ -  In Zuul-Tomcat the worker threads increased with the increase in concurrent connections and leveled off as soon as the throughput settled. Since higher load demands more worker threads, the throughput scalability is non-linear with respect to load as more context-switching and more CPU core contention occurs.
+ -  The CPU Load Averages for Zuul-Tomcat quickly outstrip Zuul-Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
 
 ## Credits
 
