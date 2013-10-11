@@ -81,17 +81,17 @@ An experiment will be carried out to tune and stress both implementations, measu
 
 ### Test Scenario
 
-The load test scenario was simulated using the “wrk benchmark” tool which was sending requests through KeepAlive connections against a target stub which simulated a random 1k payload with a 50ms uniform latency. In a realistic scenario we assume this implementation will be behind a Netscaler/VIP which would reuse connections instead of frequent connections open/close.
+The load test scenario was simulated using the “wrk benchmark” tool which was sending requests through KeepAlive connections against a target stub which simulated a random 1k payload with a 50ms uniform latency. In a realistic scenario we assume this implementation will be behind a Netscaler/VIP which would reuse sockets instead of exposing constant socket churn.
 
 The number of simultaneous connections was slowly ramped, starting at 700 and ending at 2000, with 10 minutes spent in steadystate load at each step.
 
 ## Highlights of Observations
 
--   We have successfully achieved the objective of tuning Zuul-Netty to reach linear scalability and highlighted the benefits of nonblocking IO with a comparison to Zuul-Tomcat. To achieve this we made some TCP tweaks and added overrides for Netty's IO threads.
+-   We have successfully achieved the objective of tuning Zuul-Netty to reach linear scalability and highlighted the benefits of nonblocking outbound IO via a comparison to Zuul-Tomcat. To achieve this we made some TCP tweaks and added overrides for Netty's IO threads.
 -   We observed that, comparatively, Tomcat’s APR connector was much more efficient in cases where there was no KeepAlive, i.e every request involved the client opening a TCP connection to the proxy.
 -   The scalability point with respect to Tomcat vs Netty was determined by discounting the overheads/latencies incurred in the time spent in processing the response content as this is noise present in both tests. Based on the table below, we can conclude that the scalability point of Zuul-Tomcat was achieved at 1300 concurrent connections with a throughput of around 16K TPS, whereas the Netty implementation was linearly scalable [we tested upto 2000 connections ~ 28K TPS].
 -   The Zuul-Netty response times for maximum load of 2000 connections was around 71 ms, that is a total of ~21ms spent on the wire and in the proxy. The difference in the response time at each load level was almost uniform, this can be attributed to the overhead of processing the increasing server load [overhead of the HTTP codec/network latencies within the stream, @max load we were using 680Mbps on a 1G NIC and network saturation effects contributed to an increase in latency at this load level].
--   The Zuul-Tomcat response times started to increase significantly with increasing connections, which is a composite effect of blocking connections, frequent GC and high number of busy worker threads. This is reflected in the Operating system’s run queue length and the JVM’s GC throughput. Comparison graphs can be found below.
+-   The Zuul-Tomcat response times started to increase significantly with increasing connections, which is a composite effect of blocking connections, frequent GC and high number of busy worker threads. This is reflected in the Operating System’s run queue length and the JVM’s GC throughput. Comparison graphs can be found below.
 
 ## Detailed Observations
 
@@ -137,13 +137,13 @@ It is clear that Zuul-Netty has a much more stable performance characteristic th
  -  Non blocking inbound AND outbound IO.
     The threads doing the useful filter work never block and so can be set to a fixed number, equal to the number of cores. This has the effect of preventing contention for CPU resource, something which was observed in Zuul-Tomcat.
  -  During profiling and thread activity analysis of the Netty instance we observed that the major contributor was the Selector method, hence reducing the inbound and outbound IO worker threads [default: 2*no of CPUs] helped us save some CPU cycles. These values need to be determined as per the application usage.
- -  Efficiently utilizes the system resources like CPU/network. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
- -  High number of connections doesn’t affect the stability of the ZUUL proxy instance, whereas with Tomcat the instance became unresponsive when the worker threads reach limits.
- -  Memory utilization is very efficient as the temporary stacks created by the number of threads are much less due to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
+ -  Efficiently utilises the system resources - CPU, network etc. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
+ -  High number of connections doesn’t affect the stability of the Zuul-Netty proxy instance, whereas with Zuul-Tomcat the instance became unresponsive when the worker threads reach limits.
+ -  Memory utilization is very efficient as the temporary stacks created by the number of threads are hugely less thanks to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
 
 ### Observed Limitations of Zuul-Tomcat
- -  In Netty based ZUUL we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the ZUUL proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
- -  In tomcat the worker threads increases with increase in concurrent connections and leveled off as soon as the throughput settled.
+ -  In Zuul-Netty we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the Zuul-Netty proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
+ -  In Zuul-Tomcat the worker threads increased with the increase in concurrent connections and leveled off as soon as the throughput settled.
  -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
 
 ## Credits
