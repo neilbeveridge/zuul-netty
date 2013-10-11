@@ -6,10 +6,6 @@ We seek to demonstrate the benefits of the Netty stack over Tomcat when utilisin
 
 An experiment will be carried out to tune and stress both implementations, measuring throughput and latency as strain effects surface.
 
-### Credits
-
-This work was carried out by Raamnath Mani & Neil Beveridge. 
-
 ## Take Aways - For the Impatient
 -   Non-blocking inbound and outbound IO performs much better in terms of linear scalability. A caveat is that all processing filters employed in the proxy must never block the execution stage threads i.e. they must use non-blocking outbound IO e.g. if config services are being contacted by filters synchronously.
 -   Time spent in GC is reduced significantly by Netty so long as the request and response buffers are not intercepted in processing filters. Doing so would drag the content into user space and cause an increase in GC utilisation. We chose to carefully expose only the minimum request and response data in the filter API so that the framework developers can make guarantees to filter developers about performance.
@@ -118,3 +114,7 @@ It is clear that Zuul-Netty has a much more stable performance characteristic th
  -  In Netty based ZUUL we observed that the context switches started off at 100K per second and settled at 48K at peak load. This is because at the start of the run the efficiency of the ZUUL proxy is at peak [all threads were active from start of the run] since Netty NIO is event based, this trend matches the TPS and mirrors the response latency.
  -  In tomcat the worker threads increases with increase in concurrent connections and leveled off as soon as the throughput settled.
  -  The CPU Load Averages for Tomcat quickly outstrip Netty and as the load passes the number of available cores, as a result of the copious worker threads, a queueing effect ensues which presents as an increase in latency and therefore a lower througput for a given number of connections.
+
+## Credits
+
+This work was carried out by Raamnath Mani & Neil Beveridge.
