@@ -83,7 +83,7 @@ An experiment will be carried out to tune and stress both implementations, measu
 
 The load test scenario was simulated using the “wrk benchmark” tool which was sending requests through KeepAlive connections against a target stub which simulated a random 1k payload with a 50ms uniform latency. In a realistic scenario we assume this implementation will be behind a Netscaler/VIP which would reuse connections instead of frequent connections open/close.
 
-The number of simultaneous connections was slowly ramped, starting at 700 and ending at 2000, with 10 minutes spent at steadystate load in each state.
+The number of simultaneous connections was slowly ramped, starting at 700 and ending at 2000, with 10 minutes spent in steadystate load at each step.
 
 ## Highlights of Observations
 
