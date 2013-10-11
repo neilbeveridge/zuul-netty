@@ -14,14 +14,15 @@ An experiment will be carried out to tune and stress both implementations, measu
 ## Method
 
 ### Equipment and Tool Specification
-- Intel(R) Xeon(R) CPU E5430 @ 2.66GHz (dual quad core - total 8 CPU cores).
-- Single 1Gbps NICs employed on each server.
-- Unspecified Production-grade, low-latency networking equipment utilised for interconnects.
-- Mixture of WRK load generator and HP LoadRunner used to provide a sample probe.
+-   Intel(R) Xeon(R) CPU E5430 @ 2.66GHz (dual quad core - total 8 CPU cores).
+-   Single 1Gbps NICs employed on each server.
+-   Unspecified Production-grade, low-latency networking equipment utilised for interconnects.
+-   Mixture of WRK load generator and HP LoadRunner used to provide a sample probe.
 
 ### Configuration
 
 #### Zuul-Netty Configuration
+##### JVM
 -   -server
 -   -Xms1500m
 -   -Xmx1500m
@@ -29,6 +30,8 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -XX:+UseParallelGC
 -   -XX:+UseCompressedOops
 -   -XX:+PrintFlagsFinal
+
+##### Framework
 -   -Dxorg.jboss.netty.epollBugWorkaround=true – To enable the epoll CPU fix.
 -   -Dxorg.jboss.netty.selectTimeout=10        – This is the default, has affect only when idling.
 -   -Dcom.netflix.zuul.workers.inbound=4       - limit inbound IO workers to 4 threads (half the cores)
@@ -36,8 +39,7 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -Dcom.netflix.zuul.workers.outbound=4      - limit outbound IO workers to 4 threads (half the cores)
 
 #### Zuul-Tomcat Configuration
-
--   -Dzuul.max.host.connections=5000           - set to ensure no pool bottleneck
+##### JVM
 -   -server
 -   -Xms3500m
 -   -Xmx3500m
@@ -46,10 +48,25 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -XX:+UseCompressedOops
 -   -XX:+PrintFlagsFinal
 
-#### OS Configuration
-- Increase the OS’s receive and write buffers, net.core.rmem\_max and net.core.wmem_max.
-- Maximum number of packets queued on the INPUT side, especially when the NIC receives packets faster than kernel can process them. - net.core.netdev\_max_backlog.
-- Increased the backlog per port, net.core.somaxconn and the global limit, tcp\_max\_syn_backlog.
+##### Framework
+-   -Dzuul.max.host.connections=5000           - set to ensure no pool bottleneck
+
+##### APR Connector 
+-   maxKeepAliveRequests="5000"
+-   maxThreads="5000"
+-   connectionTimeout="20000"
+-   acceptorThreadCount="2"
+-   maxKeepAliveRequests="5000"
+-   maxThreads="5000"
+-   socketBuffer="15000"
+-   pollTime="5000"
+
+#### OS 
+-   net.core.rmem_max = 8388608 - increase read buffer size
+-   net.core.wmem_max = 8388608 - increase write buffer size
+-   net.core.netdev\_max_backlog = 5000 - Maximum number of packets queued on the INPUT side, especially when the NIC receives packets faster than kernel can process them
+-   net.core.somaxconn = 5000 - increase the maximum number of inbound connections allowed
+-   net.ipv4.tcp\_max\_syn_backlog = 5000 - increase the backlog per port to surface queueing effects
 
 ### Test Scenario
 
@@ -105,7 +122,8 @@ Zuul running on Tomcat                                      |Zuul-Netty
 ### Observed Benefits of Zuul-Netty
 It is clear that Zuul-Netty has a much more stable performance characteristic than Zuul-Tomcat.
  -  Non blocking inbound AND outbound IO.
-    We were able to handle a higher number of concurrent connections with a significantly lower number of IO threads. This reduced the CPU utilization spent on the Selectors.
+    The threads doing the useful filter work never block and so can be set to a fixed number, equal to the number of cores. This has the effect of preventing contention for CPU resource, something which was observed in Zuul-Tomcat.
+ -  During profiling and thread activity analysis of the Netty instance we observed that the major contributor was the Selector method, hence reducing the inbound and outbound IO worker threads [default: 2*no of CPUs] helped us save some CPU cycles. These values need to be determined as per the application usage.
  -  Efficiently utilizes the system resources like CPU/network. Even higher throughput can be achieved with bonded or dedicated NICs. Depending upon the additional tasks on the proxy layer we might need additional CPU capacity.
  -  High number of connections doesn’t affect the stability of the ZUUL proxy instance, whereas with Tomcat the instance became unresponsive when the worker threads reach limits.
  -  Memory utilization is very efficient as the temporary stacks created by the number of threads are much less due to its low thread count and also zero-copy request and response content buffers are employed. Higher application throughput is visible in the GC graphs shown below.
