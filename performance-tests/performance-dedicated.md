@@ -2,7 +2,7 @@
 
 ## Introduction
 
-We seek to demonstrate the benefits of the Netty stack over Tomcat when utilising non-blocking IO inbound and outbound and zero-copy buffer transfer.
+We seek to prove the hypothesis that the Netty stack (Zuul-Netty) is able to produce a more stable, higher-throughput and lower-latency performance characteristic than the original Neftlix Zuul implementation (Zuul-Tomcat). We posit that significant gains will be achieved by utilising non-blocking outbound IO and zero-copy buffer transfer.
 
 An experiment will be carried out to tune and stress both implementations, measuring throughput and latency as strain effects surface.
 
@@ -87,7 +87,7 @@ The number of simultaneous connections was slowly ramped, starting at 700 and en
 
 ## Highlights of Observations
 
--   We have successfully achieved the objective of tuning the Zuul-Netty port (Zuul-Netty) to reach linear scalability compared to the Netflix Zuul project running atop Tomcat (Zuul-Tomcat) version and highlight the benefits of nonblocking IO. To achieve this we did some TCP tweaks and added overrides for the netty’s IO threads.
+-   We have successfully achieved the objective of tuning Zuul-Netty to reach linear scalability and highlighted the benefits of nonblocking IO with a comparison to Zuul-Tomcat. To achieve this we made some TCP tweaks and added overrides for Netty's IO threads.
 -   We observed that, comparatively, Tomcat’s APR connector was much more efficient in cases where there was no KeepAlive, i.e every request involved the client opening a TCP connection to the proxy.
 -   The scalability point with respect to Tomcat vs Netty was determined by discounting the overheads/latencies incurred in the time spent in processing the response content as this is noise present in both tests. Based on the table below, we can conclude that the scalability point of Zuul-Tomcat was achieved at 1300 concurrent connections with a throughput of around 16K TPS, whereas the Netty implementation was linearly scalable [we tested upto 2000 connections ~ 28K TPS].
 -   The Zuul-Netty response times for maximum load of 2000 connections was around 71 ms, that is a total of ~21ms spent on the wire and in the proxy. The difference in the response time at each load level was almost uniform, this can be attributed to the overhead of processing the increasing server load [overhead of the HTTP codec/network latencies within the stream, @max load we were using 680Mbps on a 1G NIC and network saturation effects contributed to an increase in latency at this load level].
