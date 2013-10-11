@@ -83,6 +83,8 @@ An experiment will be carried out to tune and stress both implementations, measu
 
 The load test scenario was simulated using the “wrk benchmark” tool which was sending requests through KeepAlive connections against a target stub which simulated a random 1k payload with a 50ms uniform latency. In a realistic scenario we assume this implementation will be behind a Netscaler/VIP which would reuse connections instead of frequent connections open/close.
 
+The number of simultaneous connections was slowly ramped, starting at 700 and ending at 2000, with 10 minutes spent at steadystate load in each state.
+
 ## Highlights of Observations
 
 -   We have successfully achieved the objective of tuning the Zuul-Netty port (Zuul-Netty) to reach linear scalability compared to the Netflix Zuul project running atop Tomcat (Zuul-Tomcat) version and highlight the benefits of nonblocking IO. To achieve this we did some TCP tweaks and added overrides for the netty’s IO threads.
