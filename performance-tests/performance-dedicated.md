@@ -32,11 +32,16 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -XX:+PrintFlagsFinal
 
 ##### Framework
--   -Dxorg.jboss.netty.epollBugWorkaround=true – To enable the epoll CPU fix.
--   -Dxorg.jboss.netty.selectTimeout=10        – This is the default, has affect only when idling.
--   -Dcom.netflix.zuul.workers.inbound=4       - limit inbound IO workers to 4 threads (half the cores)
--   -Dcom.netflix.zuul.workers.stage=8         - limit execution stage threads to the number of cores
--   -Dcom.netflix.zuul.workers.outbound=4      - limit outbound IO workers to 4 threads (half the cores)
+-   -Dxorg.jboss.netty.epollBugWorkaround=true 
+    *- enable the epoll CPU fix, although not experienced*
+-   -Dxorg.jboss.netty.selectTimeout=10        
+    *- the default, has affect only when idling.*
+-   -Dcom.netflix.zuul.workers.inbound=4       
+    *- limit inbound IO workers to 4 threads (half the cores)*
+-   -Dcom.netflix.zuul.workers.stage=8         
+    *- limit execution stage threads to the number of cores*
+-   -Dcom.netflix.zuul.workers.outbound=4      
+    *- limit outbound IO workers to 4 threads (half the cores)*
 
 #### Zuul-Tomcat Configuration
 ##### JVM
@@ -49,7 +54,8 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   -XX:+PrintFlagsFinal
 
 ##### Framework
--   -Dzuul.max.host.connections=5000           - set to ensure no pool bottleneck
+-   -Dzuul.max.host.connections=5000           
+    *- set to ensure no pool bottleneck*
 
 ##### APR Connector 
 -   maxKeepAliveRequests="5000"
@@ -62,11 +68,16 @@ An experiment will be carried out to tune and stress both implementations, measu
 -   pollTime="5000"
 
 #### OS 
--   net.core.rmem_max = 8388608 - increase read buffer size
--   net.core.wmem_max = 8388608 - increase write buffer size
--   net.core.netdev\_max_backlog = 5000 - Maximum number of packets queued on the INPUT side, especially when the NIC receives packets faster than kernel can process them
--   net.core.somaxconn = 5000 - increase the maximum number of inbound connections allowed
--   net.ipv4.tcp\_max\_syn_backlog = 5000 - increase the backlog per port to surface queueing effects
+-   net.core.rmem_max = 8388608 
+    *- increase read buffer size*
+-   net.core.wmem_max = 8388608 
+    *- increase write buffer size*
+-   net.core.netdev\_max_backlog = 5000 
+    *- increase the maximum number of packets queued on the INPUT side, especially when the NIC receives packets faster than kernel can process them*
+-   net.core.somaxconn = 5000 
+    *- increase the maximum number of inbound connections allowed*
+-   net.ipv4.tcp\_max\_syn_backlog = 5000 
+    *- increase the backlog per port to surface queueing effects*
 
 ### Test Scenario
 
