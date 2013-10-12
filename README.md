@@ -27,4 +27,4 @@ mvn install && sudo mvn -pl netty-server exec:java
 
 ### Performance Results
 - Testing carried out on [m1.m and m3.2xl instance types in AWS EC2](/performance-tests/performance-ec2.md).
-- Testing carried out on [dedicated hardware inside a proprietry datacenter](/performance-tests/performance-ec2.md).
+- Testing carried out on [dedicated hardware inside a proprietry datacenter](/performance-tests/performance-dedicated.md).
