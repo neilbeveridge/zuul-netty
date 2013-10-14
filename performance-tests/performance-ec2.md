@@ -1,4 +1,4 @@
-# zuul-netty Performance Testing
+# Performance Testing on EC2
 
 ### m1.medium Benchmark 
 This benchmark exists as it's easy to saturate the hardware, surfacing the traits of the implementation.
