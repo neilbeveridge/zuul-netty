@@ -2,10 +2,11 @@ package com.netflix.zuul.proxy.framework.api;
 
 import org.jboss.netty.handler.codec.http.HttpMethod;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-public interface FrameworkHttpRequest {
+public interface FrameworkHttpRequest extends AttachedObjectContainer {
 
     /**
      * Returns the method of this request.
@@ -49,5 +50,11 @@ public interface FrameworkHttpRequest {
      *         if there is no header in this message.
      */
     List<Map.Entry<String, String>> getHeaders();
+
+    /**
+     * Set the target URI for this request.
+     * @param route URI representing the host to proxy this request to. Only the scheme, host and port are taken into consideration when establishing the connection.
+     */
+    void setRoute (URI route);
     
 }

@@ -37,8 +37,11 @@ public class HttpResponseFrameworkHandler extends SimpleChannelHandler {
             HttpResponse response = (HttpResponse) e.getMessage();
             HttpRequest request = (HttpRequest) ctx.getAttachment();
 
-            LOG.debug("handler: {} is calling response-handler: {}", tag, responseHandler.getClass().getSimpleName());
-            responseHandler.responseReceived(new HttpRequestFrameworkAdapter(request), new HttpResponseFrameworkAdapter(response));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("handler: {} is calling response-handler: {}", tag, responseHandler.getClass().getSimpleName());
+            }
+
+            responseHandler.responseReceived(new HttpRequestFrameworkAdapter(ctx, request), new HttpResponseFrameworkAdapter(ctx, response));
 
             ctx.setAttachment(null);
         } else if (e.getMessage() instanceof HttpChunk) {

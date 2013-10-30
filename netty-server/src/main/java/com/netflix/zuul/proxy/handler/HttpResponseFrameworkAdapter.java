@@ -1,6 +1,8 @@
 package com.netflix.zuul.proxy.handler;
 
+import com.netflix.zuul.proxy.core.AttachedObjectContainerNetty;
 import com.netflix.zuul.proxy.framework.api.FrameworkHttpResponse;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 
 import java.util.List;
@@ -16,9 +18,11 @@ import java.util.Map;
 class HttpResponseFrameworkAdapter implements FrameworkHttpResponse {
 
     private final HttpResponse response;
+    private final ChannelHandlerContext context;
 
-    HttpResponseFrameworkAdapter(HttpResponse response) {
+    HttpResponseFrameworkAdapter(ChannelHandlerContext context, HttpResponse response) {
         this.response = response;
+        this.context = context;
     }
 
     @Override
@@ -41,4 +45,18 @@ class HttpResponseFrameworkAdapter implements FrameworkHttpResponse {
         return response.getHeaders();
     }
 
+    @Override
+    public void attachObject(String name, Object object) {
+        AttachedObjectContainerNetty.containerFor(context).attachObject("user." + name, object);
+    }
+
+    @Override
+    public <T extends Object> T detachObject(String name, Class<T> type) {
+        return AttachedObjectContainerNetty.containerFor(context).detachObject("user." + name, type);
+    }
+
+    @Override
+    public <T extends Object> T attachedObject(String name, Class<T> type) {
+        return AttachedObjectContainerNetty.containerFor(context).attachedObject("user." + name, type);
+    }
 }

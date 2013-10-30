@@ -26,15 +26,15 @@ public class IdleChannelWatchdog extends IdleStateAwareChannelHandler {
 
     @Override
     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e) throws Exception {
-        LOG.info("closing {} channel after {} event was intercepted", channelName, e.getState().toString());
+        LOG.debug("closing {} channel after {} event was intercepted", channelName, e.getState().toString());
 
         e.getChannel().close().addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
-                    LOG.info("{} channel closed cleanly", channelName);
+                    LOG.debug("{} channel closed cleanly", channelName);
                 } else {
-                    LOG.info("{} channel failed to close cleanly", channelName);
+                    LOG.debug("{} channel failed to close cleanly", channelName);
                 }
             }
         });

@@ -27,6 +27,7 @@ import java.util.concurrent.FutureTask;
 public class ProxyServer {
     private static final Timer TIMER = new HashedWheelTimer();
     private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
+    private static final String PROPERTY_WORKERS = "com.netflix.zuul.workers.inbound";
 
     private final int port;
     private Channel channel;
@@ -48,8 +49,15 @@ public class ProxyServer {
 
             @Override
             public ProxyServer call() throws Exception {
-                // Configure the server.
-                bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+
+                if (System.getProperty(PROPERTY_WORKERS) != null) {
+                    int inboundWorkers = Integer.parseInt(System.getProperty(PROPERTY_WORKERS));
+                    bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), inboundWorkers));
+                    LOG.info("inbound worker threads max set to {}", inboundWorkers);
+                } else {
+                    bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
+                }
+
                 FiltersChangeNotifier changeNotifier = filtersChangeNotifier != null ? filtersChangeNotifier : FiltersChangeNotifier.IGNORE;
                 CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER);
                 changeNotifier.addFiltersListener(pipelineFactory);
@@ -65,7 +73,7 @@ public class ProxyServer {
                 channel = bootstrap.bind(new InetSocketAddress(port));
                 LOG.info("server bound to port {}", port);
 
-                LOG.info("current handlers registred {}", pipelineFactory.getPipeline().getNames());
+                LOG.info("current handlers registered {}", pipelineFactory.getPipeline().getNames());
 
                 return ProxyServer.this;
             }

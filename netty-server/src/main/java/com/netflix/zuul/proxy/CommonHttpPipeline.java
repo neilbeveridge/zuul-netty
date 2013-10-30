@@ -33,7 +33,8 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private final ConcurrentMap<ZuulPreFilter, Path> preFilters = new ConcurrentSkipListMap<>();
     private final ConcurrentMap<ZuulPostFilter, Path> postFilters = new ConcurrentSkipListMap<>();
 
-    private static final String PROPERTY_WORKERS = "com.netflix.workers";
+    private static final String PROPERTY_STAGE_WORKERS = "com.netflix.zuul.workers.stage";
+    private static final String PROPERTY_OUTBOUND_WORKERS = "com.netflix.zuul.workers.outbound";
 
     //seconds until the TCP connection will close
     private static final int IDLE_TIMEOUT_READER = 0;
@@ -47,8 +48,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final ChannelHandler HTTP_RESPONSE_LOGGER = new HttpResponseFrameworkHandler("http-response-logger",
             LoggingResponseHandler.FACTORY.getInstance("http-response-logger"));
     private static final ChannelHandler APP_EXECUTION_HANDLER;
-    private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
-    private static final ChannelHandler SERVER_TIMING_HANDLER = new ServerTimingHandler("inbound");
+    private static final ChannelFactory OUTBOUND_CHANNEL_FACTORY;
     private static final ChannelHandler IDLE_CHANNEL_WATCHDOG_HANDLER = new IdleChannelWatchdog("inbound");
 
     private final ConnectionPool outboundConnectionPool;
@@ -59,9 +59,18 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final String START_OF_PRE_FILTERS = "app-http-response-logger";
 
     static {
-        int workers = System.getProperty(PROPERTY_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_WORKERS)):Runtime.getRuntime().availableProcessors();
-        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(workers, 5*1024*1024, 250*1024*1024, 100, TimeUnit.MILLISECONDS));
-        LOG.info("spawning {} worker threads", workers);
+        int stageWorkers = System.getProperty(PROPERTY_STAGE_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_STAGE_WORKERS)):Runtime.getRuntime().availableProcessors();
+        APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(stageWorkers, 5*1024*1024, 250*1024*1024, 100, TimeUnit.MILLISECONDS));
+        LOG.info("stage worker threads max set to {}", stageWorkers);
+
+        if (System.getProperty(PROPERTY_OUTBOUND_WORKERS) != null) {
+            int outboundWorkers = Integer.parseInt(System.getProperty(PROPERTY_OUTBOUND_WORKERS));
+            OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), outboundWorkers);
+            LOG.info("outbound worker threads max set to {}", outboundWorkers);
+        } else {
+            OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+        }
+
     }
 
 
@@ -86,7 +95,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
 
         //httpfu
         pipeline.addLast("http-deflater", new HttpContentCompressor());
-        pipeline.addLast("edge-timer", SERVER_TIMING_HANDLER);
+        pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"));
         pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
         pipeline.addLast("idle-watchdog", IDLE_CHANNEL_WATCHDOG_HANDLER);
 

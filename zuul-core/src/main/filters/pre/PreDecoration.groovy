@@ -27,8 +27,8 @@ import java.util.concurrent.ThreadLocalRandom
  */
 class PreDecorationFilter extends AbstractZuulPreFilter {
 
-    private static final String[] HOSTS = [
-        "http://www.google.com:80"
+    private static final URI[] HOSTS = [
+        new URI ("http://localhost:8081")
     ]
 
     PreDecorationFilter() {
@@ -37,8 +37,7 @@ class PreDecorationFilter extends AbstractZuulPreFilter {
 
     @Override
     void requestReceived(FrameworkHttpRequest request) {
-        String host = HOSTS[ThreadLocalRandom.current().nextInt(HOSTS.length)];
-        request.addHeader(Route.ROUTE_HEADER, host);
-        request.addHeader("Host", host);
+        URI host = HOSTS[ThreadLocalRandom.current().nextInt(HOSTS.length)];
+        request.setRoute(host);
     }
 }

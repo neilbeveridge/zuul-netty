@@ -17,8 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -34,16 +33,20 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     private static final long TIME_BETWEEN_BACKGROUND_EVICTIONS = 1000L;
     private static final long EVICT_IDLE_AFTER = -1; // -ve for no time-based eviction
 
-    private volatile Map<URL, ObjectPool<ChannelFuture>> pool = new HashMap<>();
+    private volatile Map<URI, ObjectPool<ChannelFuture>> pool = new HashMap<>();
     private final ChannelFactory channelFactory;
     private Lock poolCreationRaceLock = new ReentrantLock();
     private final Timer timer;
 
-    private GenericObjectPool<ChannelFuture> createApplicationPool(final URL routeHost)
+    private GenericObjectPool<ChannelFuture> createApplicationPool(final URI routeHost)
             throws IllegalRouteException {
 
+        if (routeHost == null) {
+            throw new IllegalRouteException("the route cannot be null");
+        }
+
         //only the connection-oriented parts of the URL should be set - avoid accidental creation of a ton of connection pools
-        try {
+        /* screw this for now ~ try {
             if (!new URL(routeHost.getProtocol(), routeHost.getHost(), routeHost.getPort(), "").equals(routeHost)) {
                 LOG.info("route {} should only define protocol, host and port", routeHost);
                 throw new IllegalRouteException(routeHost.toString());
@@ -54,7 +57,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
             }
         } catch (MalformedURLException e) {
             throw new IllegalRouteException(routeHost.toString());
-        }
+        }*/
 
         final GenericObjectPool<ChannelFuture> applicationPool = new GenericObjectPool<ChannelFuture>(new PoolableObjectFactory<ChannelFuture>() {
 
@@ -86,7 +89,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
                 bootstrap.setPipelineFactory(new HttpOutboundPipeline(timer));
 
                 final ChannelFuture future = bootstrap.connect(new InetSocketAddress(routeHost.getHost(), routeHost.getPort()));
-                LOG.info("attempting connection to remote host {}:{} on connection {}", routeHost.getHost(), routeHost.getPort(),
+                LOG.debug("attempting connection to remote host {}:{} on connection {}", routeHost.getHost(), routeHost.getPort(),
                         Integer.toHexString(future.getChannel().getId()));
 
                 future.addListener(new ChannelFutureListener() {
@@ -156,7 +159,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     }
 
     @Override
-    public Connection borrow(URL routeHost)
+    public Connection borrow(URI routeHost)
             throws IllegalRouteException {
 
         //only take out the lock if absolutely necessary
@@ -171,7 +174,11 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
         try {
             ChannelFuture future = pool.get(routeHost).borrowObject();
             Connection connection = new Connection(routeHost, future);
-            LOG.debug("borrowing connection {}", connection.getId());
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("borrowing connection {}", connection.getId());
+            }
+
             return connection;
         } catch (NoSuchElementException e) {
             return null;
@@ -184,7 +191,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     public void release(Connection connection) {
         LOG.debug("releasing connection {}", connection.getId());
         try {
-            pool.get(connection.getRouteHost()).returnObject(connection.getChannelFuture());
+            pool.get(connection.getRoute()).returnObject(connection.getChannelFuture());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -194,7 +201,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     public void destroy(Connection connection) {
         LOG.debug("destroying connection {}", connection.getId());
         try {
-            pool.get(connection.getRouteHost()).invalidateObject(connection.getChannelFuture());
+            pool.get(connection.getRoute()).invalidateObject(connection.getChannelFuture());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

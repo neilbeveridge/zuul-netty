@@ -3,22 +3,22 @@ package com.netflix.zuul.proxy.core;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 
-import java.net.URL;
+import java.net.URI;
 
 public class Connection {
 
-    private final URL routeHost;
+    private final URI route;
     private final ChannelFuture channelFuture;
     private final String id;
 
-    public Connection(URL routeHost, ChannelFuture channelFuture) {
-        this.routeHost = routeHost;
+    public Connection(URI route, ChannelFuture channelFuture) {
+        this.route = route;
         this.channelFuture = channelFuture;
         this.id = Integer.toHexString(channelFuture.getChannel().getId());
     }
 
-    public URL getRouteHost() {
-        return routeHost;
+    public URI getRoute() {
+        return route;
     }
 
     public Channel getChannel() {

@@ -28,7 +28,7 @@ public class HttpRequestFrameworkHandler extends SimpleChannelUpstreamHandler {
             HttpRequest request = (HttpRequest) e.getMessage();
             InterruptsImpl callback = new InterruptsImpl(request, e.getChannel());
             LOG.debug("handler: {} is calling request-handler: {}", tag, requestHandler.getClass().getSimpleName());
-            requestHandler.requestReceived(new HttpRequestFrameworkAdapter(request));
+            requestHandler.requestReceived(new HttpRequestFrameworkAdapter(ctx, request));
 
 
             if (callback.isInterrupted()) {

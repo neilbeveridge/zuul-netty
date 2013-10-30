@@ -16,7 +16,7 @@
   <logger name="com.hotels.architecture.proxy.core.CommonsConnectionPool" level="DEBUG" />
   <logger name="com.hotels.architecture.proxy.handler.ExceptionSurfacerHandler" level="DEBUG" />-->
 
-  <root level="WARN">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
 </configuration>

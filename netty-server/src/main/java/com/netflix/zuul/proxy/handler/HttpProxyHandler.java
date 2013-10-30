@@ -1,6 +1,7 @@
 package com.netflix.zuul.proxy.handler;
 
 import com.netflix.zuul.proxy.IllegalRouteException;
+import com.netflix.zuul.proxy.core.AttachedObjectContainerNetty;
 import com.netflix.zuul.proxy.core.Connection;
 import com.netflix.zuul.proxy.core.ConnectionPool;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -12,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,8 @@ public class HttpProxyHandler extends SimpleChannelHandler {
 
     private static final String HANDLER_NAME = "http-pipe-back";
     final static String WENT_AWAY = "outbound-went-away";
+
+    public static final String ROUTE_OBJECT = "core.route";
 
     private final boolean isChunkedRequestsSupported;
     private final List<HttpChunk> queuedChunks = new ArrayList<>();
@@ -41,7 +44,7 @@ public class HttpProxyHandler extends SimpleChannelHandler {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
         e.getChannel().close();
-        LOG.info("inbound channel failed", e.getCause());
+        LOG.debug("inbound channel failed", e.getCause());
         destroyConnection();
     }
 
@@ -171,7 +174,7 @@ public class HttpProxyHandler extends SimpleChannelHandler {
 
     }
 
-    private Connection newConnection(URL hostRoute, final Channel inboundChannel) throws IllegalRouteException {
+    private Connection newConnection(URI hostRoute, final Channel inboundChannel) throws IllegalRouteException {
 
         //suspend inbound channel whilst we connect
         inboundChannel.setReadable(false);
@@ -201,9 +204,10 @@ public class HttpProxyHandler extends SimpleChannelHandler {
 
         try {
             if (message.getMessage() instanceof HttpRequest) {
+                URI route = AttachedObjectContainerNetty.containerFor(ctx).attachedObject(ROUTE_OBJECT, URI.class);
 
                 final HttpRequest request = (HttpRequest) message.getMessage();
-                handleRequest(request, inboundChannel);
+                handleRequest(route, request, inboundChannel);
 
             } else if (message.getMessage() instanceof HttpChunk) {
 
@@ -224,13 +228,13 @@ public class HttpProxyHandler extends SimpleChannelHandler {
         }
     }
 
-    private URL getRoute(HttpRequest request)
+    private URI getRoute(HttpRequest request)
             throws IllegalRouteException {
-        URL route;
+        URI route;
         String sRoute = request.getHeader(ROUTE_HEADER);
         try {
-            route = new URL(sRoute);
-        } catch (MalformedURLException e) {
+            route = new URI(sRoute);
+        } catch (URISyntaxException e) {
             throw new IllegalRouteException(sRoute);
         }
 
@@ -239,16 +243,14 @@ public class HttpProxyHandler extends SimpleChannelHandler {
         return route;
     }
 
-    private void handleRequest(final HttpRequest request, final Channel inboundChannel)
+    private void handleRequest(final URI route, final HttpRequest request, final Channel inboundChannel)
             throws IllegalRouteException {
         this.doneSendingRequestAndBuffer = false;
 
-        URL routeHost = getRoute(request);
-
         //establish connection if not already pending or if it has gone away
-        if (!connected() || !routeHost.equals(outboundConnection.getRouteHost())) {
+        if (!connected() || !route.equals(outboundConnection.getRoute())) {
             disposeConnection();
-            final Connection connection = newConnection(routeHost, inboundChannel);
+            final Connection connection = newConnection(route, inboundChannel);
 
             connection.getChannelFuture().addListener(new ChannelFutureListener() {
 

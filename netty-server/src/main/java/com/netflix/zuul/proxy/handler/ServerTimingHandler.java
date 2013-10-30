@@ -62,7 +62,9 @@ public class ServerTimingHandler extends SimpleChannelHandler {
     }
 
     private void logDifference(long nano) {
-        LOG.info("timer {} - exchange took: {}ms", tag, String.format("%.2f", nano / NANO_TO_MS));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("timer {} - exchange took: {}ms", tag, String.format("%.2f", nano / NANO_TO_MS));
+        }
     }
 
 }

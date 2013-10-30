@@ -2,11 +2,11 @@ package com.netflix.zuul.proxy.core;
 
 import com.netflix.zuul.proxy.IllegalRouteException;
 
-import java.net.URL;
+import java.net.URI;
 
 public interface ConnectionPool {
 
-    Connection borrow(URL routeHost)
+    Connection borrow(URI routeHost)
     throws IllegalRouteException;
 
     void release(Connection channel);

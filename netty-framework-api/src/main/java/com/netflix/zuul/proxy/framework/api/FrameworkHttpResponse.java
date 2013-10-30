@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public interface FrameworkHttpResponse {
+public interface FrameworkHttpResponse extends AttachedObjectContainer {
 
     /**
      * Returns the header value with the specified header name.  If there are

@@ -40,7 +40,10 @@ public class ClientTimingHandler extends SimpleChannelHandler {
 
     @Override
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        LOG.info("timer {} - connect took: {}ms", tag, String.format("%.2f", (System.nanoTime() - connectStart) / NANO_TO_MS));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("timer {} - connect took: {}ms", tag, String.format("%.2f", (System.nanoTime() - connectStart) / NANO_TO_MS));
+        }
+
         connectContext.stop();
         super.channelConnected(ctx, e);
     }
@@ -73,7 +76,9 @@ public class ClientTimingHandler extends SimpleChannelHandler {
     }
 
     private void logDifference(long nano) {
-        LOG.info("timer {} - exchange took: {}ms", tag, String.format("%.2f", nano / NANO_TO_MS));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("timer {} - exchange took: {}ms", tag, String.format("%.2f", nano / NANO_TO_MS));
+        }
     }
 
 }
