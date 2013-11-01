@@ -8,17 +8,28 @@ import com.netflix.zuul.proxy.core.CommonsConnectionPool;
 import com.netflix.zuul.proxy.core.ConnectionPool;
 import com.netflix.zuul.proxy.framework.plugins.LoggingResponseHandler;
 import com.netflix.zuul.proxy.handler.*;
+
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.http.HttpContentCompressor;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.jboss.netty.handler.timeout.IdleStateHandler;
-import org.jboss.netty.util.Timer;
+
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+
+
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.Timer;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.bootstrap.ChannelFactory;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.socket.SocketChannel;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -27,7 +38,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListener {
+public class CommonHttpPipeline extends ChannelInitializer<SocketChannel> implements FiltersListener {
     private static final Logger LOG = LoggerFactory.getLogger(CommonHttpPipeline.class);
 
     private final ConcurrentMap<ZuulPreFilter, Path> preFilters = new ConcurrentSkipListMap<>();
@@ -35,6 +46,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
 
     private static final String PROPERTY_STAGE_WORKERS = "com.netflix.zuul.workers.stage";
     private static final String PROPERTY_OUTBOUND_WORKERS = "com.netflix.zuul.workers.outbound";
+    private static final int    stageWorkers = 0;
 
     //seconds until the TCP connection will close
     private static final int IDLE_TIMEOUT_READER = 0;
@@ -59,7 +71,7 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
     private static final String START_OF_PRE_FILTERS = "app-http-response-logger";
 
     static {
-        int stageWorkers = System.getProperty(PROPERTY_STAGE_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_STAGE_WORKERS)):Runtime.getRuntime().availableProcessors();
+        stageWorkers = System.getProperty(PROPERTY_STAGE_WORKERS)!=null?Integer.parseInt(System.getProperty(PROPERTY_STAGE_WORKERS)):Runtime.getRuntime().availableProcessors();
         APP_EXECUTION_HANDLER = new ExecutionHandler(new OrderedMemoryAwareThreadPoolExecutor(stageWorkers, 5*1024*1024, 250*1024*1024, 100, TimeUnit.MILLISECONDS));
         LOG.info("stage worker threads max set to {}", stageWorkers);
 
@@ -70,48 +82,16 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
         } else {
             OUTBOUND_CHANNEL_FACTORY = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
         }
-
     }
 
 
     public CommonHttpPipeline(Timer timer) {
-        this.idleStateHandler = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
+        this.idleStateHandler = new IdleStateHandler(IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
         this.outboundConnectionPool = new CommonsConnectionPool(timer, OUTBOUND_CHANNEL_FACTORY);
     }
 
 
-    @Override
-    public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = Channels.pipeline();
-
-        //offload from worker threads
-        pipeline.addLast("app-execution-handler", APP_EXECUTION_HANDLER);
-
-        //httpfu io
-        pipeline.addLast("socket-suspension", new SocketSuspensionHandler());
-        pipeline.addLast("idle-detection", idleStateHandler);
-        pipeline.addLast("http-decoder", new HttpRequestDecoder());
-        pipeline.addLast("http-encoder", new HttpResponseEncoder());
-
-        //httpfu
-        pipeline.addLast("http-deflater", new HttpContentCompressor());
-        pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"));
-        pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
-        pipeline.addLast("idle-watchdog", IDLE_CHANNEL_WATCHDOG_HANDLER);
-
-        //response handlers
-        addZuulPostFilters(pipeline, postFilters);
-
-        pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
-
-        //request handlers
-        addZuulPreFilters(pipeline, preFilters);
-
-        //proxy
-        pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
-
-        return pipeline;
-    }
+    
 
     private void addZuulPostFilters(ChannelPipeline pipeline, ConcurrentMap<ZuulPostFilter, Path> filters) {
         for (Map.Entry<ZuulPostFilter, Path> entry : filters.entrySet()) {
@@ -160,5 +140,40 @@ public class CommonHttpPipeline implements ChannelPipelineFactory, FiltersListen
             throw new IllegalArgumentException("illegal filter type");
         }
     }
+
+
+	@Override
+	protected void initChannel(SocketChannel channel) throws Exception {
+		
+		ChannelPipeline pipeline = channel.pipeline();
+
+        // offload long-running blocking worker threads from Channel processing worker threads to avoid
+		// high latency in the Channel processing.
+		EventExecutor e1 = (EventExecutor) Executors.newFixedThreadPool(stageWorkers);
+        pipeline.addLast(e1, APP_EXECUTION_HANDLER);
+
+        //httpfu io
+        pipeline.addLast("socket-suspension", new SocketSuspensionHandler());
+        pipeline.addLast("idle-detection", idleStateHandler);
+        pipeline.addLast("http-decoder", new HttpRequestDecoder());
+        pipeline.addLast("http-encoder", new HttpResponseEncoder());
+
+        //httpfu
+        pipeline.addLast("http-deflater", new HttpContentCompressor());
+        pipeline.addLast("edge-timer", new ServerTimingHandler("inbound"););
+        pipeline.addLast("http-keep-alive", KEEP_ALIVE_HANDLER);
+        pipeline.addLast("idle-watchdog", IDLE_CHANNEL_WATCHDOG_HANDLER);
+
+        //response handlers
+        addZuulPostFilters(pipeline, postFilters);
+
+        pipeline.addLast("app-http-response-logger", HTTP_RESPONSE_LOGGER);
+
+        //request handlers
+        addZuulPreFilters(pipeline, preFilters);
+
+        //proxy
+        pipeline.addLast("proxy", new HttpProxyHandler(outboundConnectionPool, IS_REQUEST_CHUNKED_ENABLED));
+	}
 
 }

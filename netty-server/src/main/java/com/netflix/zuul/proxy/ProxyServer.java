@@ -4,14 +4,26 @@ import com.netflix.zuul.netty.filter.FiltersChangeNotifier;
 import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.reporting.JmxReporter;
-import org.jboss.netty.bootstrap.ServerBootstrap;
+
+import io.netty.bootstrap.ServerBootstrap;
+
 import org.jboss.netty.channel.AdaptiveReceiveBufferSizePredictor;
-import org.jboss.netty.channel.Channel;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
+
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.logging.InternalLoggerFactory;
 import org.jboss.netty.logging.Slf4JLoggerFactory;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
+
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +39,7 @@ import java.util.concurrent.FutureTask;
 public class ProxyServer {
     private static final Timer TIMER = new HashedWheelTimer();
     private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
-    private static final String PROPERTY_WORKERS = "com.netflix.zuul.workers.inbound";
+	private static final String PROPERTY_WORKERS = "com.netflix.zuul.workers.inbound";
 
     private final int port;
     private Channel channel;
@@ -45,36 +57,61 @@ public class ProxyServer {
 
 
     public FutureTask<ProxyServer> run() {
+    	
         FutureTask<ProxyServer> future = new FutureTask<>(new Callable<ProxyServer>() {
 
             @Override
             public ProxyServer call() throws Exception {
-
-                if (System.getProperty(PROPERTY_WORKERS) != null) {
+            	
+            	// Configure the server.
+            	EventLoopGroup bossGroup = new NioEventLoopGroup();
+				
+				EventLoopGroup workerGroup = null;
+				if (System.getProperty(PROPERTY_WORKERS) != null) {
                     int inboundWorkers = Integer.parseInt(System.getProperty(PROPERTY_WORKERS));
-                    bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), inboundWorkers));
-                    LOG.info("inbound worker threads max set to {}", inboundWorkers);
-                } else {
-                    bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool()));
-                }
-
-                FiltersChangeNotifier changeNotifier = filtersChangeNotifier != null ? filtersChangeNotifier : FiltersChangeNotifier.IGNORE;
-                CommonHttpPipeline pipelineFactory = new CommonHttpPipeline(TIMER);
-                changeNotifier.addFiltersListener(pipelineFactory);
-                bootstrap.setPipelineFactory(pipelineFactory);
-
-                bootstrap.setOption("child.tcpNoDelay", true);
-                bootstrap.setOption("child.connectTimeoutMillis", 2000);
-                /*bootstrap.setOption("child.writeBufferHighWaterMark", true);
-                bootstrap.setOption("child.writeBufferLowWaterMark", true);
-                bootstrap.setOption("child.writeSpinCount", true);*/
-                bootstrap.setOption("child.receiveBufferSizePredictor", new AdaptiveReceiveBufferSizePredictor());
-
-                channel = bootstrap.bind(new InetSocketAddress(port));
-                LOG.info("server bound to port {}", port);
-
-                LOG.info("current handlers registered {}", pipelineFactory.getPipeline().getNames());
-
+					workerGroup = new NioEventLoopGroup(inboundWorkers);
+				} else {
+					workerGroup = new NioEventLoopGroup();
+				}
+                
+                try {
+        			ServerBootstrap bootstrap = new ServerBootstrap();
+        			
+        			bootstrap.group(bossGroup, workerGroup);
+        			bootstrap.channel(NioServerSocketChannel.class);
+        			
+        			//TODO : determine if CommonHttpPipeline needs to be kept.
+        			FiltersChangeNotifier changeNotifier = filtersChangeNotifier != null ? filtersChangeNotifier : FiltersChangeNotifier.IGNORE;
+                    CommonHttpPipeline commonHttpPipeline = new CommonHttpPipeline(TIMER);
+                    changeNotifier.addFiltersListener(commonHttpPipeline);
+        			
+        			
+        			bootstrap.childOption(ChannelOption.TCP_NODELAY, true);
+        			bootstrap.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 2000);
+        			bootstrap.localAddress(port);
+        			
+        			bootstrap.childHandler(commonHttpPipeline);
+        			
+        			// Start the server.
+        			ChannelFuture f = bootstrap.bind().sync();
+        			
+        			LOG.info("server bound to port {}", port);
+         
+        			// Wait until the server socket is closed.
+        			f.channel().closeFuture().sync();
+        			
+        		} finally {
+        			
+        	        // Shut down all event loops to terminate all threads.
+        	        bossGroup.shutdownGracefully();
+        	        workerGroup.shutdownGracefully();
+        	        
+        	        // Wait until all threads are terminated.
+        	        bossGroup.terminationFuture().sync();
+        	        workerGroup.terminationFuture().sync();
+        	    }
+                
+                // TODO : determine why "this" needs to be returned.
                 return ProxyServer.this;
             }
         });
@@ -85,36 +122,11 @@ public class ProxyServer {
     }
 
     public boolean isRunning() {
-        return channel != null && channel.isBound();
+        return channel != null && channel.isActive();
     }
 
 
-    public FutureTask<ProxyServer> stop() {
-        FutureTask<ProxyServer> future = new FutureTask<>(new Callable<ProxyServer>() {
-
-            @Override
-            public ProxyServer call() throws Exception {
-                if (channel != null) {
-                    channel.close();
-                }
-                if (bootstrap != null) {
-                    bootstrap.releaseExternalResources();
-                }
-
-                bootstrap = null;
-
-                if (channel != null) {
-                    channel.getCloseFuture().await();
-                }
-
-                return ProxyServer.this;
-            }
-        });
-        final Thread thread = new Thread(future, "Proxy Server");
-        thread.start();
-        return future;
-    }
-
+    
     public static void main(String[] args) throws Exception {
         int port = 8080;
         String filtersPath = "/Users/nbeveridge/Development/git/zuul-netty/zuul-core/src/main/filters/pre";
@@ -123,17 +135,17 @@ public class ProxyServer {
             filtersPath = args[1];
         }
 
-        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
+        // Log all channel events at DEBUG log level.
+    	// TODO : determine if this instance will magically log, or we have to do some more coding ...
+    	LoggingHandler loggingHandler = new LoggingHandler(ProxyServer.class);
+    	
         LOG.info("Starting server...");
 
-        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(
-                Paths.get(filtersPath));
-        ProxyServer proxyServer = new ProxyServer(port)
-                .setFiltersChangeNotifier(changeNotifier);
+        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(Paths.get(filtersPath));
+        ProxyServer proxyServer = new ProxyServer(port).setFiltersChangeNotifier(changeNotifier);
 
         proxyServer.run().get();
         changeNotifier.reload();
-
 
         JmxReporter.startDefault(Metrics.defaultRegistry());
 

@@ -3,8 +3,12 @@ package com.netflix.zuul.proxy;
 import com.netflix.zuul.proxy.handler.ClientTimingHandler;
 import com.netflix.zuul.proxy.handler.ExceptionSurfacerHandler;
 import com.netflix.zuul.proxy.handler.IdleChannelWatchdog;
-import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelPipeline;
+
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.socket.SocketChannel;
+
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.handler.codec.http.HttpContentCompressor;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
@@ -13,11 +17,10 @@ import org.jboss.netty.handler.codec.http.HttpResponseDecoder;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.logging.InternalLogLevel;
-import org.jboss.netty.util.Timer;
 
-import static org.jboss.netty.channel.Channels.pipeline;
+import io.netty.util.Timer;
 
-public class HttpOutboundPipeline implements ChannelPipelineFactory {
+public class HttpOutboundPipeline extends ChannelInitializer<SocketChannel> {
 
     private static final int RESPONSE_MAX_INITIAL_LINE_LENGTH = 4096;
     private static final int RESPONSE_MAX_HEADER_SIZE = (1024*8);
@@ -35,9 +38,10 @@ public class HttpOutboundPipeline implements ChannelPipelineFactory {
         IDLE_STATE_HANDLER = new IdleStateHandler(timer, IDLE_TIMEOUT_READER, IDLE_TIMEOUT_WRITER, IDLE_TIMEOUT_BOTH);
     }
 
-    @Override
-    public ChannelPipeline getPipeline() throws Exception {
-        ChannelPipeline pipeline = pipeline();
+	@Override
+	protected void initChannel(SocketChannel channel) throws Exception {
+		
+		ChannelPipeline pipeline = channel.pipeline();
 
         pipeline.addLast("idle-detection", IDLE_STATE_HANDLER);
         pipeline.addLast("logging", new LoggingHandler(InternalLogLevel.DEBUG));
@@ -48,8 +52,7 @@ public class HttpOutboundPipeline implements ChannelPipelineFactory {
         pipeline.addLast("remote-hop-timer", new ClientTimingHandler("outbound"));
         pipeline.addLast("exception-surfacer", EXCEPTION_SURFACER);
         pipeline.addLast("idle-watchdog", new IdleChannelWatchdog("outbound"));
-
-        return pipeline;
-    }
+		
+	}
 
 }

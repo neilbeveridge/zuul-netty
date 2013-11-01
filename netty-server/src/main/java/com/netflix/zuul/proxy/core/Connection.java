@@ -1,7 +1,7 @@
 package com.netflix.zuul.proxy.core;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 
 import java.net.URI;
 
