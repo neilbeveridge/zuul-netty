@@ -21,7 +21,7 @@ public class ProxyServerTest {
 
     @Test
     public void startsAndStopsServer() throws Exception {
-        proxyServer = new ProxyServer(9090).run().get();
+        proxyServer = new ProxyServer(9090).bootstrap().get();
         assertTrue(proxyServer != null);
     }
 
