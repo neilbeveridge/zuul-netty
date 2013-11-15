@@ -7,6 +7,19 @@
   </parent>
   <artifactId>netty-mock-server</artifactId>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
+    <java.version>1.7</java.version>
+
+    <main.class>io.netty.example.proxy.MockEndpoint</main.class>
+    <local.port>8081</local.port>
+
+  </properties>
+
+
   <dependencies>
     <dependency>
       <groupId>com.netflix.zuul</groupId>
@@ -23,7 +36,12 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>
         <configuration>
-          <mainClass>com.hotels.architecture.proxy.MockEndpoint</mainClass>
+          <mainClass>${main.class}</mainClass>
+          <arguments>
+            <argument>${local.port}</argument>
+            <argument>${remote.host}</argument>
+            <argument>${remote.port}</argument>
+          </arguments>
         </configuration>
       </plugin>
     </plugins>

@@ -7,6 +7,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 
 public class BackendClientInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -23,6 +24,7 @@ public class BackendClientInitializer extends ChannelInitializer<SocketChannel> 
 		ChannelPipeline p = channel.pipeline();
 		
 		p.addLast("codec", new HttpClientCodec());
+        p.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
 		p.addLast(new BackendClientChannelHandler(inboundChannel));
 	}
 	 

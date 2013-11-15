@@ -14,7 +14,7 @@ public class Connection {
     public Connection(URI route, ChannelFuture channelFuture) {
         this.route = route;
         this.channelFuture = channelFuture;
-        this.id = Integer.toHexString(channelFuture.getChannel().getId());
+        this.id = Integer.toHexString(channelFuture.channel().hashCode());
     }
 
     public URI getRoute() {
@@ -22,7 +22,7 @@ public class Connection {
     }
 
     public Channel getChannel() {
-        return channelFuture.getChannel();
+        return channelFuture.channel();
     }
 
     public ChannelFuture getChannelFuture() {

@@ -14,3 +14,8 @@ deploy:
 	mvn -Dmaven.test.skip=true -pl netty-server assembly:assembly
 #	scp -i ~/Downloads/nbev-zuul.pem netty-server/target/netty-server-1.0-SNAPSHOT-jar-with-dependencies.jar ec2-user@$(REMOTE_HOST):
 
+server:
+	mvn -f netty-server/pom.xml compile exec:java -Dmain.class=com.netflix.zuul.proxy.ProxyServer
+
+client:
+	mvn -f netty-mock-server/pom.xml compile exec:java -Dmain.class=com.netflix.zuul.proxy.MockEndpoint -Dlocal.port=8081

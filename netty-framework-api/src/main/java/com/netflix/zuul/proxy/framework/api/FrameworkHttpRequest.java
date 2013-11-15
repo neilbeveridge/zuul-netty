@@ -1,6 +1,7 @@
 package com.netflix.zuul.proxy.framework.api;
 
-import org.jboss.netty.handler.codec.http.HttpMethod;
+
+import io.netty.handler.codec.http.HttpMethod;
 
 import java.net.URI;
 import java.util.List;
