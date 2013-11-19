@@ -47,6 +47,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.netflix.zuul</groupId>
+      <artifactId>netty-mock-server</artifactId>
+      <scope>test</scope>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-pool</groupId>
       <artifactId>commons-pool</artifactId>
       <version>1.6</version>

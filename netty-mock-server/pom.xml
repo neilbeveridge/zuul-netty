@@ -20,14 +20,6 @@
   </properties>
 
 
-  <dependencies>
-    <dependency>
-      <groupId>com.netflix.zuul</groupId>
-      <artifactId>netty-server</artifactId>
-      <scope>compile</scope>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
 
   <build>
     <plugins>

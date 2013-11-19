@@ -1,13 +1,13 @@
 package com.netflix.zuul.proxy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An HTTP server that sends random HTTP number.
@@ -18,19 +18,27 @@ public class MockEndpoint {
 
     private final int port;
 
+	private String responseToGive;
+
     public MockEndpoint(int port) {
         this.port = port;
     }
 
-    public void run() throws Exception {
-        // Configure the server.
+	public MockEndpoint(int port, String responseToGive) {
+		this.port = port;
+		this.responseToGive = responseToGive;
+	}
+
+	public void run() throws Exception {
+		
+		// Configure the server.
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
              .channel(NioServerSocketChannel.class)
-             .childHandler(new HttpMockEndPointServerInitializer());
+             .childHandler(new HttpMockEndPointServerInitializer(responseToGive));
 
             Channel ch = b.bind(port).sync().channel();
             
@@ -50,6 +58,15 @@ public class MockEndpoint {
         } else {
             port = 8080;
         }
-        new MockEndpoint(port).run();
+
+		String responseToGive = null;
+		if (args.length > 1)
+			responseToGive = args[1];
+
+		if (responseToGive == null) {
+			new MockEndpoint(port).run();
+		} else {
+			new MockEndpoint(port, responseToGive).run();
+		}
     }
 }

@@ -6,8 +6,11 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.netflix.zuul.proxy.handler.FrontEndServerHandler;
 
 public class FrontendServerInitializer extends ChannelInitializer<SocketChannel> {
 
