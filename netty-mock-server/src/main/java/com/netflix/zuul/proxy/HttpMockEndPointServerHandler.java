@@ -23,39 +23,45 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter {
-	
-	private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerHandler.class);
-	
-	private static final Random RANDOM_GENERATOR = new Random();
-	
-	private String responseToGive;
-	
-    public HttpMockEndPointServerHandler(String responseToGive) {
-		this.responseToGive = responseToGive;
-	}
 
-	@Override
+    private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerHandler.class);
+
+    private static final Random RANDOM_GENERATOR = new Random();
+
+    private final String responseToGive;
+
+    public HttpMockEndPointServerHandler(String responseToGive) {
+        this.responseToGive = responseToGive;
+
+        if (responseToGive == null) {
+            LOG.debug("Response to give: random number");
+        } else {
+            LOG.debug("Response to give: string '{}'", responseToGive);
+        }
+    }
+
+    @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    	
+
         if (msg instanceof HttpRequest) {
             HttpRequest req = (HttpRequest) msg;
-            
+
             LOG.info("got request : {}", req);
 
             if (is100ContinueExpected(req)) {
                 ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
             }
-            
+
             boolean keepAlive = isKeepAlive(req);
-            
+
             byte[] content = getResponseContent();
-            
-			FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
+
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
             response.headers().set(CONTENT_TYPE, "text/plain");
             response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
 
@@ -68,18 +74,21 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
         }
     }
 
-	private byte[] getResponseContent() {
-		if (responseToGive != null)
-			return responseToGive.getBytes();
-		
-		// generate some content containing a random number
-		//double random = Math.random();
-		int random = RANDOM_GENERATOR.nextInt();
-		byte[] content = Integer.toString(random).getBytes();
-		
-		LOG.info("content int = {}, bytes = {}", random, content);
-		return content;
-	}
+    private byte[] getResponseContent() {
+        if (responseToGive != null) {
+            return responseToGive.getBytes();
+        }
+
+        return generateRandomContent();
+    }
+
+    private byte[] generateRandomContent() {
+        int random = RANDOM_GENERATOR.nextInt();
+        byte[] content = Integer.toString(random).getBytes();
+
+        LOG.info("content int = {}, bytes = {}", random, content);
+        return content;
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
@@ -87,4 +96,3 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
         ctx.close();
     }
 }
-
