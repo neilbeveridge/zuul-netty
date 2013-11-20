@@ -1,6 +1,5 @@
 package com.netflix.zuul.proxy;
 
-
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -11,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.zuul.proxy.handler.FrontEndServerHandler;
+import com.netflix.zuul.proxy.handler.RoutingRules;
 
 public class FrontendServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -35,9 +35,13 @@ public class FrontendServerInitializer extends ChannelInitializer<SocketChannel>
         // TODO : determine whether HttpObjectAggregator keeps chunks "on-heap".
         p.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
 
-        p.addLast("frontendServer", new FrontEndServerHandler(remoteHost, remotePort));
+        p.addLast("frontendServer", new FrontEndServerHandler(remoteHost, remotePort, routingRules()));
 
         LOG.info("Added handlers to channel pipeline : " + p.names());
+    }
+
+    private RoutingRules routingRules() {
+        return new RoutingRules("/booking", "/ba");
     }
 
 }

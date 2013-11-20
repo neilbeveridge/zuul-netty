@@ -6,6 +6,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import io.netty.buffer.Unpooled;
@@ -23,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter {
+
+    private static final String BOOKING_PATH = "/ba";
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerHandler.class);
 
@@ -52,18 +55,26 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
             HttpRequest req = (HttpRequest) msg;
 
             LOG.info("got request : {}", req);
+            String uri = req.getUri();
+            LOG.debug("URI of request: {}", uri);
 
             if (is100ContinueExpected(req)) {
                 ctx.write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
             }
 
             boolean keepAlive = isKeepAlive(req);
+            FullHttpResponse response;
 
-            byte[] content = getResponseContent();
+            if (uri.equals(BOOKING_PATH)) {
+                byte[] content = getResponseContent();
 
-            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
-            response.headers().set(CONTENT_TYPE, "text/plain");
-            response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+                response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
+                response.headers().set(CONTENT_TYPE, "text/plain");
+                response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+            } else {
+                response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
+                response.headers().set(CONTENT_LENGTH, 0);
+            }
 
             if (!keepAlive) {
                 ctx.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -71,6 +82,7 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
                 response.headers().set(CONNECTION, Values.KEEP_ALIVE);
                 ctx.write(response);
             }
+
         }
     }
 

@@ -1,7 +1,5 @@
 package com.netflix.zuul.proxy;
 
-import com.netflix.zuul.proxy.handler.BackendClientChannelHandler;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -9,12 +7,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 
+import com.netflix.zuul.proxy.handler.BackendClientChannelHandler;
+
 public class BackendClientInitializer extends ChannelInitializer<SocketChannel> {
 
-	private Channel inboundChannel;
+	private final Channel inboundChannel;
 	
 	public BackendClientInitializer(Channel inboundChannel) {
-		
 		this.inboundChannel = inboundChannel;
 	}
 

@@ -1,7 +1,9 @@
 package com.netflix.zuul.proxy;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.junit.Assert.assertEquals;
 
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -39,18 +41,47 @@ public class ProxyServerTest {
 
     @Test
     public void canProxyRequestToBookingService() throws Exception {
-        String responseBody = sendRequest("http://localhost:8080/booking");
+        Response response = sendRequest("http://localhost:8080/booking");
 
-        assertEquals(BOOKING_CONFIRMED, responseBody);
+        assertEquals(BOOKING_CONFIRMED, response.content());
+        assertEquals(OK.code(), response.responseCode());
     }
 
-    public String sendRequest(final String uri) throws Exception {
+    @Test(expected = FileNotFoundException.class)
+    public void canHandleBadRequest() throws Exception {
+        sendRequest("http://localhost:8080/asdfgh");
+    }
+
+    public Response sendRequest(final String uri) throws Exception {
         URL url = new URL(uri.toString());
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
+        int responseCode = connection.getResponseCode();
+        String content;
+
         try (InputStreamReader inputStreamReader = new InputStreamReader(connection.getInputStream())) {
-            return CharStreams.toString(inputStreamReader);
+            content = CharStreams.toString(inputStreamReader);
         }
+
+        return new Response(content, responseCode);
     }
 
+    private class Response {
+        private final String content;
+        private final int responseCode;
+
+        public Response(String content, int responseCode) {
+            this.content = content;
+            this.responseCode = responseCode;
+
+        }
+
+        public String content() {
+            return content;
+        }
+
+        public int responseCode() {
+            return responseCode;
+        }
+    }
 }
