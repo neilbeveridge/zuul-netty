@@ -17,9 +17,7 @@
 
     <main.class>io.netty.example.proxy.HexDumpProxy</main.class>
     <local.port>8080</local.port>
-    <remote.host>localhost</remote.host>
-    <remote.port>8081</remote.port>
-
+    <filters.root.path>/filters</filters.root.path>
 
   </properties>
 
@@ -74,8 +72,7 @@
           <mainClass>${main.class}</mainClass>
           <arguments>
             <argument>${local.port}</argument>
-            <argument>${remote.host}</argument>
-            <argument>${remote.port}</argument>
+            <argument>${filters.root.path}</argument>
           </arguments>
         </configuration>
       </plugin>

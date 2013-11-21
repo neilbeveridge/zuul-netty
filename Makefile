@@ -18,4 +18,4 @@ server:
 	mvn -f netty-server/pom.xml compile exec:java -Dmain.class=com.netflix.zuul.proxy.ProxyServer
 
 client:
-	mvn -f netty-mock-server/pom.xml compile exec:java -Dmain.class=com.netflix.zuul.proxy.MockEndpoint -Dexec.args="8081 BOOKING" 
+	mvn -f netty-mock-server/pom.xml compile exec:java -Dmain.class=com.netflix.zuul.proxy.MockEndpoint -Dexec.args="8081 EXAMPLE_RESPONSE"

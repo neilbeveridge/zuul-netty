@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter {
 
-    private static final String BOOKING_PATH = "/ba";
+    private static final String EXAMPLE_PATH = "/example";
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerHandler.class);
 
@@ -65,7 +65,7 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
             boolean keepAlive = isKeepAlive(req);
             FullHttpResponse response;
 
-            if (uri.equals(BOOKING_PATH)) {
+            if (uri.equals(EXAMPLE_PATH)) {
                 byte[] content = getResponseContent();
 
                 response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
@@ -75,6 +75,8 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
                 response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
                 response.headers().set(CONTENT_LENGTH, 0);
             }
+
+            LOG.debug("Returning response: {}", response);
 
             if (!keepAlive) {
                 ctx.write(response).addListener(ChannelFutureListener.CLOSE);

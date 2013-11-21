@@ -53,7 +53,7 @@ public class MockEndpoint {
             channelToWaitFor = syncFuture.channel();
             channelToWaitFor.closeFuture().addListener(new ShutdownGracefullyOnComplete());
 
-            LOG.info("bound to port {}", port);
+            LOG.info("Mock Endpoint started at {}", port);
         } catch (Exception e) {
             shutdownGracefully();
             throw e;

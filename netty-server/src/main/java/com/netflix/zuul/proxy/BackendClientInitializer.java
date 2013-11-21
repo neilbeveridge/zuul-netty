@@ -20,11 +20,10 @@ public class BackendClientInitializer extends ChannelInitializer<SocketChannel> 
 	@Override
 	protected void initChannel(SocketChannel channel) throws Exception {
 		
-		ChannelPipeline p = channel.pipeline();
+		ChannelPipeline pipeline = channel.pipeline();
 		
-		p.addLast("codec", new HttpClientCodec());
-        p.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
-		p.addLast(new BackendClientChannelHandler(inboundChannel));
+		pipeline.addLast("codec", new HttpClientCodec());
+        pipeline.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
+		pipeline.addLast(new BackendClientChannelHandler(inboundChannel));
 	}
-	 
  }

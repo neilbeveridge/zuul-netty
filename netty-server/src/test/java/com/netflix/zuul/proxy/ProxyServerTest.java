@@ -2,22 +2,29 @@ package com.netflix.zuul.proxy;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.io.CharStreams;
+import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 
 public class ProxyServerTest {
-    private static final String BOOKING_CONFIRMED = "booking confirmed";
+    private static final String FILTERS_ROOT_PATH = "/filters";
 
-    private static final String LOCAL_HOST = "localhost";
+    private static final String EXPECTED_REPONSE = "correct example response";
+
     private static final int REMOTE_PORT = 8081;
     private static final int LOCAL_PORT = 8080;
 
@@ -26,11 +33,24 @@ public class ProxyServerTest {
 
     @Before
     public void setup() throws Exception {
-        backEndService = new MockEndpoint(REMOTE_PORT, BOOKING_CONFIRMED);
+        backEndService = new MockEndpoint(REMOTE_PORT, EXPECTED_REPONSE);
         backEndService.start();
 
-        proxyServer = new ProxyServer(LOCAL_PORT, LOCAL_HOST, REMOTE_PORT);
+        ZuulFiltersLoader filtersChangeNotifier = new ZuulFiltersLoader(filtersRootPath());
+
+        proxyServer = new ProxyServer(LOCAL_PORT, filtersChangeNotifier);
+        filtersChangeNotifier.reload();
         proxyServer.start();
+    }
+
+    private Path filtersRootPath() throws URISyntaxException {
+        URL resource = ProxyServerTest.class.getResource(FILTERS_ROOT_PATH);
+
+        assertNotNull("File/directory not found: " + FILTERS_ROOT_PATH, resource);
+
+        URI resourceUri = resource.toURI();
+
+        return Paths.get(resourceUri);
     }
 
     @After
@@ -40,15 +60,15 @@ public class ProxyServerTest {
     }
 
     @Test
-    public void canProxyRequestToBookingService() throws Exception {
-        Response response = sendRequest("http://localhost:8080/booking");
+    public void canProxyRequest() throws Exception {
+        Response response = sendRequest("http://localhost:8080/example");
 
-        assertEquals(BOOKING_CONFIRMED, response.content());
+        assertEquals(EXPECTED_REPONSE, response.content());
         assertEquals(OK.code(), response.responseCode());
     }
 
     @Test(expected = FileNotFoundException.class)
-    public void canHandleBadRequest() throws Exception {
+    public void rejectsInvalidRequestWith404() throws Exception {
         sendRequest("http://localhost:8080/asdfgh");
     }
 
@@ -73,7 +93,6 @@ public class ProxyServerTest {
         public Response(String content, int responseCode) {
             this.content = content;
             this.responseCode = responseCode;
-
         }
 
         public String content() {

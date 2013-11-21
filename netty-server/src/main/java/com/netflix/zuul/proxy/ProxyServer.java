@@ -9,48 +9,53 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import java.io.FileNotFoundException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.netflix.zuul.netty.filter.FiltersChangeNotifier;
+import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
+
 /**
- * @author HWEB
+ * HTTP Proxy Server
  */
 public class ProxyServer {
     private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
+    private static final String DEFAULT_FILTERS_ROOT_PATH = "/filters";
 
     private final int localPort;
-    private final String remoteHost;
-    private final int remotePort;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel channelToWaitFor;
+    private final FrontendServerInitializer channelInitialiser;
 
-    public ProxyServer(int localPort, String remoteHost, int remotePort) {
+    public ProxyServer(int localPort, FiltersChangeNotifier filtersChangeNotifier) {
         this.localPort = localPort;
-        this.remoteHost = remoteHost;
-        this.remotePort = remotePort;
+
+        channelInitialiser = new FrontendServerInitializer();
+        filtersChangeNotifier.addFiltersListener(channelInitialiser);
     }
 
     public void start() throws Exception {
-        LOG.info("Proxying *:" + localPort + " to " + remoteHost + ':' + remotePort + " ...");
+        LOG.info("Proxy server starting on port {}...", localPort);
 
-        bossGroup = new NioEventLoopGroup();
-        workerGroup = new NioEventLoopGroup();
+        createEventLoopGroups();
         try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .childHandler(new FrontendServerInitializer(remoteHost, remotePort))
-            .childOption(ChannelOption.AUTO_READ, false);
+            ServerBootstrap bootstrap = createBootstrap();
 
-            ChannelFuture bindFuture = b.bind(localPort);
+            ChannelFuture bindFuture = bindAndSync(bootstrap);
 
-            bindFuture.addListener(new LogBindSuccessOrFailureOnComplete());
-
-            bindFuture.sync();
-
+            // Get channel as field so we can stop on demand
             channelToWaitFor = bindFuture.channel();
-            channelToWaitFor.closeFuture().addListener(new ShutdownGracefullyOnComplete());
+            channelToWaitFor.closeFuture().addListener(new ShutdownGracefully());
+
+            LOG.info("Proxy server started on port {}...", localPort);
         } catch (Exception e) {
             shutdownGracefully();
             throw e;
@@ -61,6 +66,29 @@ public class ProxyServer {
         channelToWaitFor.close().sync();
     }
 
+    private ChannelFuture bindAndSync(ServerBootstrap bootstrap) throws InterruptedException {
+        ChannelFuture bindFuture = bootstrap.bind(localPort);
+
+        bindFuture.addListener(new LogBindSuccessOrFailure());
+        bindFuture.sync();
+
+        return bindFuture;
+    }
+
+    private void createEventLoopGroups() {
+        bossGroup = new NioEventLoopGroup();
+        workerGroup = new NioEventLoopGroup();
+    }
+
+    private ServerBootstrap createBootstrap() {
+        ServerBootstrap bootstrap = new ServerBootstrap();
+        bootstrap.group(bossGroup, workerGroup)
+        .channel(NioServerSocketChannel.class)
+        .childHandler(channelInitialiser)
+        .childOption(ChannelOption.AUTO_READ, false);
+        return bootstrap;
+    }
+
     private void shutdownGracefully() {
         LOG.debug("Shutting down gracefully");
 
@@ -68,7 +96,7 @@ public class ProxyServer {
         workerGroup.shutdownGracefully();
     }
 
-    private class LogBindSuccessOrFailureOnComplete implements ChannelFutureListener {
+    private class LogBindSuccessOrFailure implements ChannelFutureListener {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
             if (future.isSuccess()) {
@@ -79,7 +107,7 @@ public class ProxyServer {
         }
     }
 
-    private class ShutdownGracefullyOnComplete implements ChannelFutureListener {
+    private class ShutdownGracefully implements ChannelFutureListener {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
             try {
@@ -92,19 +120,50 @@ public class ProxyServer {
         }
     }
 
+    private static Path defaultFiltersRootPath() throws URISyntaxException, FileNotFoundException {
+        String path = DEFAULT_FILTERS_ROOT_PATH;
+
+        return classpathRelativePath(path);
+    }
+
+    private static Path classpathRelativePath(String path) throws URISyntaxException, FileNotFoundException {
+        URL resource = ProxyServer.class.getResource(path);
+
+        if (resource == null) {
+            throw new FileNotFoundException(path);
+        }
+
+        URI resourceUri = resource.toURI();
+
+        return Paths.get(resourceUri);
+    }
+
     public static void main(String[] args) throws Exception {
 
         // Validate command line options.
-        if (args.length != 3) {
-            System.err.println("Usage: " + ProxyServer.class.getSimpleName() + " <local port> <remote host> <remote port>");
+        if (args.length < 1) {
+            System.err.println("Usage: " + ProxyServer.class.getSimpleName() + " <local port> [<filters root path>]");
             return;
         }
 
         // Parse command line options.
         int localPort = Integer.parseInt(args[0]);
-        String remoteHost = args[1];
-        int remotePort = Integer.parseInt(args[2]);
 
-        new ProxyServer(localPort, remoteHost, remotePort).start();
+        Path filtersPath;
+        if (args.length >= 2) {
+            filtersPath = classpathRelativePath(args[1]);
+        } else {
+            filtersPath = defaultFiltersRootPath();
+        }
+
+        LOG.info("filtersPath = {}", filtersPath);
+
+        LOG.info("Starting server...");
+
+        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(filtersPath);
+
+        ProxyServer proxyServer = new ProxyServer(localPort, changeNotifier);
+        changeNotifier.reload();
+        proxyServer.start();
     }
 }
