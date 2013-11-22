@@ -47,5 +47,20 @@
       <version>1.0</version>
     </dependency>
   </dependencies>
+  
+  <build>
+  
+  	<resources>
+      <resource>
+        <targetPath>filters</targetPath>
+        <filtering>false</filtering>
+        <directory>${basedir}/src/main/filters</directory>
+        <includes>
+          <include>**/*.groovy</include>
+        </includes>
+       </resource>
+      </resources>
+        
+  </build>
 
 </project>
