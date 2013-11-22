@@ -127,7 +127,9 @@ public class ProxyServer {
     }
 
     private static Path classpathRelativePath(String path) throws URISyntaxException, FileNotFoundException {
-        URL resource = ProxyServer.class.getResource(path);
+        
+    	ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    	URL resource = classLoader.getResource(path);
 
         if (resource == null) {
             throw new FileNotFoundException(path);

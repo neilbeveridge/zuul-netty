@@ -15,9 +15,9 @@
     <maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
     <java.version>1.7</java.version>
 
-    <main.class>io.netty.example.proxy.HexDumpProxy</main.class>
+    <main.class>com.netflix.zuul.proxy.ProxyServer</main.class>
     <local.port>8080</local.port>
-    <filters.root.path>/filters</filters.root.path>
+    <filters.root.path>filters</filters.root.path>
 
   </properties>
 
