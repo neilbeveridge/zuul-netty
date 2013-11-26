@@ -120,25 +120,6 @@ public class ProxyServer {
         }
     }
 
-    private static Path defaultFiltersRootPath() throws URISyntaxException, FileNotFoundException {
-        String path = DEFAULT_FILTERS_ROOT_PATH;
-
-        return classpathRelativePath(path);
-    }
-
-    private static Path classpathRelativePath(String path) throws URISyntaxException, FileNotFoundException {
-        
-    	ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    	URL resource = classLoader.getResource(path);
-
-        if (resource == null) {
-            throw new FileNotFoundException(path);
-        }
-
-        URI resourceUri = resource.toURI();
-
-        return Paths.get(resourceUri);
-    }
 
     public static void main(String[] args) throws Exception {
 
@@ -149,20 +130,19 @@ public class ProxyServer {
         }
 
         // Parse command line options.
-        int localPort = Integer.parseInt(args[0]);
+        int localPort = 8080;
 
-        Path filtersPath;
+        String filtersPath = "/Users/deepakgupta/projects/github/zuul-netty/netty-4/zuul-netty/zuul-core/src/main/filters/pre";
         if (args.length >= 2) {
-            filtersPath = classpathRelativePath(args[1]);
-        } else {
-            filtersPath = defaultFiltersRootPath();
+        	localPort = Integer.parseInt(args[0]);
+            filtersPath = args[1];
         }
-
+        
         LOG.info("filtersPath = {}", filtersPath);
 
         LOG.info("Starting server...");
 
-        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(filtersPath);
+        ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(Paths.get(filtersPath));
 
         ProxyServer proxyServer = new ProxyServer(localPort, changeNotifier);
         changeNotifier.reload();
