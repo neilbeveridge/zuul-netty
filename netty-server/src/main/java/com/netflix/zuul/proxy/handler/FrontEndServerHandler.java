@@ -24,7 +24,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FrontEndServerHandler.class);
 
-    // outboundChannel is volatile since it is shared between threads (this handler & BackendClientChannelHandler).
+    // outboundChannel is volatile since it is shared between threads
     private volatile Channel outboundChannel;
 
     @Override
@@ -97,7 +97,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelReadComplete(ChannelHandlerContext context) throws Exception {
 
-        LOG.info("channelReadComplete triggered, so writing data");
+        LOG.debug("channelReadComplete triggered, so writing data");
 
         context.flush();
     }
@@ -113,7 +113,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
 
-        LOG.info("caught exception : {}", cause);
+        LOG.debug("caught exception : {}", cause);
 
         HandlerUtil.closeOnFlush(context.channel());
     }
@@ -145,9 +145,9 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
             if (future.isSuccess()) {
-                LOG.info("Successfully connected to remote server at {}", route);
+                LOG.debug("Successfully connected to remote server at {}", route);
             } else {
-                LOG.info("Unable to connect to remote server at {}", route);
+                LOG.debug("Unable to connect to remote server at {}", route);
             }
         }
     }

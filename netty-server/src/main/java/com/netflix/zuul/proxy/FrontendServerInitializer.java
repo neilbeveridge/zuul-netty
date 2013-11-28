@@ -44,7 +44,7 @@ public class FrontendServerInitializer extends ChannelInitializer<SocketChannel>
 
         pipeline.addLast("frontendServer", new FrontEndServerHandler());
 
-        LOG.info("Added handlers to channel pipeline : " + pipeline.names());
+        LOG.debug("Added handlers to channel pipeline : {}", pipeline.names());
     }
 
     private void addZuulPostFilters(ChannelPipeline pipeline, ConcurrentMap<ZuulPostFilter, Path> filters) {
