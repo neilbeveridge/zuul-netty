@@ -9,7 +9,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.http.FullHttpRequest;
 
-import java.net.SocketAddress;
 import java.net.URI;
 
 import org.slf4j.Logger;
@@ -24,86 +23,106 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FrontEndServerHandler.class);
 
-    // outboundChannel is volatile since it is shared between threads
+    private final String remoteHost;
+    private final int remotePort;
+
+    // outboundChannel is volatile since it is shared between threads (this handler & BackendClientChannelHandler).
     private volatile Channel outboundChannel;
 
-    @Override
-    public void channelActive(ChannelHandlerContext context) throws Exception {
-        logChannelOccurrence(context, "Active");
+    public FrontEndServerHandler() {
+        this.remoteHost = "localhost";
+        this.remotePort = 8081;
     }
 
     @Override
-    public void channelRead(final ChannelHandlerContext context, Object message) throws Exception {
-        LOG.debug("Channel Read");
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
-        // wait for the outboundChannel to be active, i.e. this will only happen once the channelActive() method has completed
-        if (context.channel().isActive()) {
+        // get a reference to the inbound channel, which allows us to read data from external clients.
+        final Channel inboundChannel = ctx.channel();
 
-            logChannelOccurrence(context, "channelRead");
-
-            // Only forward HttpRequest messages to the back-end server.
-            if (message instanceof FullHttpRequest) {
-                connectToBackEndService(context, (FullHttpRequest) message);
-            }
-        }
-    }
-
-    private void connectToBackEndService(ChannelHandlerContext context, FullHttpRequest httpRequest) {
-        Bootstrap backendClientBootstrap = createBackendClientBootstrap(context);
-
-        URI route = routeFrom(context);
+        // Start the connection attempt. We need to be a CLIENT to the back-end server, so create a (client) Bootstrap, as opposed to a ServerBootstrap.
+        Bootstrap b = new Bootstrap();
+        b.group(inboundChannel.eventLoop()).channel(ctx.channel().getClass()).handler(new BackendClientInitializer(inboundChannel))
+        .option(ChannelOption.AUTO_READ, false);
 
         // connect to the back-end server
-        ChannelFuture backendConnectionFuture = backendClientBootstrap.connect(route.getHost(), route.getPort());
+        ChannelFuture future = b.connect(remoteHost, remotePort);
 
         // get a reference to the outbound channel, which allows us to write data to the back-end server.
-        outboundChannel = backendConnectionFuture.channel();
+        outboundChannel = future.channel();
 
-        backendConnectionFuture.addListener(new ConnectionSuccessOrFailureLogger(route));
-        backendConnectionFuture.addListener(new WriteToBackEnd(httpRequest));
+        future.addListener(new ChannelFutureListener() {
+
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    LOG.info("successfully connected to remote server {} on port {}", remoteHost, remotePort);
+                    // connection complete start to read first data
+                    inboundChannel.read();
+                } else {
+                    LOG.info("Unable to connect to remote server {} on port {}", remoteHost, remotePort);
+                    // Close the connection if the connection attempt has failed.
+                    inboundChannel.close();
+                }
+            }
+
+        });
     }
 
-    private URI routeFrom(ChannelHandlerContext context) {
-        // get a reference to the inbound channel, which allows us to read data from external clients (e.g. the browser or integration test).
-        final Channel inboundChannel = context.channel();
+    @Override
+    public void channelRead(final ChannelHandlerContext ctx, Object msg) {
 
-        URI route = inboundChannel.attr(Routing.ROUTE_KEY).get();
+        // wait for the outboundChannel to be active, i.e. this will only happen once the channelActive() method has completed
+        if (outboundChannel.isActive()) {
 
-        LOG.debug("route = {} in channel={}", route, inboundChannel.hashCode());
+            // Only forward HttpRequest messages to the back-end server.
+            if (msg instanceof FullHttpRequest) {
 
-        return route;
-    }
+                final Channel inboundChannel = ctx.channel();
+                URI route = inboundChannel.attr(Routing.ROUTE_KEY).get();
+                LOG.info("route = {} in channel={}", route, inboundChannel.hashCode());
 
-    private Bootstrap createBackendClientBootstrap(ChannelHandlerContext context) {
-        Channel inboundChannel = context.channel();
+                FullHttpRequest completeMsg = (FullHttpRequest) msg;
 
-        Bootstrap b = new Bootstrap();
-        b.group(inboundChannel.eventLoop()).channel(context.channel().getClass()).handler(new BackendClientInitializer(inboundChannel))
-        .option(ChannelOption.AUTO_READ, false);
-        return b;
-    }
+                ChannelFuture future = outboundChannel.writeAndFlush(completeMsg);
 
-    private void logChannelOccurrence(ChannelHandlerContext context, String occurrence) {
-        if (LOG.isDebugEnabled()) {
-            Channel channel = context.channel();
-            int hashCode = channel.hashCode();
-            SocketAddress remoteAddress = channel.remoteAddress();
-            SocketAddress localAddress = channel.localAddress();
+                future.addListener(new ChannelFutureListener() {
 
-            LOG.debug("Channel {}: hashCode={}, remoteAddress={}, localAddress={}", occurrence, hashCode, remoteAddress, localAddress);
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+
+                        if (future.isSuccess()) {
+                            LOG.info("successfully wrote to outbound channel");
+                            // was able to flush out data, start to read the next chunk
+                            ctx.channel().read();
+                        } else {
+                            LOG.info("Unable to write to outbound channel due to : ", future.cause());
+                            future.channel().close();
+                        }
+                    }
+
+                });
+            }
+
         }
     }
 
     @Override
-    public void channelReadComplete(ChannelHandlerContext context) throws Exception {
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
 
-        LOG.debug("channelReadComplete triggered, so writing data");
+        LOG.info("channelReadComplete triggered, so writing data");
 
-        context.flush();
+        ctx.flush();
+
+        /*
+        ChannelFuture future = ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
+
+        future.addListener(ChannelFutureListener.CLOSE);
+         */
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext context) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
         if (outboundChannel != null) {
             HandlerUtil.closeOnFlush(outboundChannel);
@@ -111,44 +130,12 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 
-        LOG.debug("caught exception : {}", cause);
+        LOG.info("caught exception : {}", cause);
+        //ctx.close();
 
-        HandlerUtil.closeOnFlush(context.channel());
+        HandlerUtil.closeOnFlush(ctx.channel());
     }
 
-    private class WriteToBackEnd implements ChannelFutureListener {
-        private final FullHttpRequest request;
-
-        public WriteToBackEnd(FullHttpRequest request) {
-            this.request = request;
-        }
-
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-            if (future.isSuccess()) {
-                outboundChannel.writeAndFlush(request);
-            } else {
-                outboundChannel.close();
-            }
-        }
-    }
-
-    private class ConnectionSuccessOrFailureLogger implements ChannelFutureListener {
-        private final URI route;
-
-        public ConnectionSuccessOrFailureLogger(URI route) {
-            this.route = route;
-        }
-
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-            if (future.isSuccess()) {
-                LOG.debug("Successfully connected to remote server at {}", route);
-            } else {
-                LOG.debug("Unable to connect to remote server at {}", route);
-            }
-        }
-    }
 }

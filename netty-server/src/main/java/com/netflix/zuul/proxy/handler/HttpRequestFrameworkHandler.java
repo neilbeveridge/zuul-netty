@@ -27,8 +27,6 @@ public class HttpRequestFrameworkHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext context) throws Exception {
         LOG.debug("Channel Active");
 
-        context.read();
-
         super.channelActive(context);
     }
 
@@ -52,6 +50,6 @@ public class HttpRequestFrameworkHandler extends ChannelInboundHandlerAdapter {
 
         LOG.debug("Just before ctx.read()");
 
-        super.channelRead(context, message);
+        context.fireChannelRead(message);
     }
 }
