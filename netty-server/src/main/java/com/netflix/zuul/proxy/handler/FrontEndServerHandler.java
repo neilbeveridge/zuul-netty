@@ -63,11 +63,11 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
-                    LOG.info("successfully connected to remote server {} on port {}", remoteHost, remotePort);
+                    LOG.debug("successfully connected to remote server {} on port {}", remoteHost, remotePort);
                     // connection complete start to read first data
                     inboundChannel.read();
                 } else {
-                    LOG.info("Unable to connect to remote server {} on port {}", remoteHost, remotePort);
+                    LOG.debug("Unable to connect to remote server {} on port {}", remoteHost, remotePort);
                     // Close the connection if the connection attempt has failed.
                     inboundChannel.close();
                 }
@@ -87,7 +87,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
                 final Channel inboundChannel = ctx.channel();
                 URI route = inboundChannel.attr(Routing.ROUTE_KEY).get();
-                LOG.info("route = {} in channel={}", route, inboundChannel.hashCode());
+                LOG.debug("route = {} in channel={}", route, inboundChannel.hashCode());
 
                 if (routeIsCorrect(route)) {
                     routeToBackend(ctx, msg);
@@ -125,11 +125,10 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
             public void operationComplete(ChannelFuture future) throws Exception {
 
                 if (future.isSuccess()) {
-                    LOG.info("successfully wrote to outbound channel");
-                    // was able to flush out data, start to read the next chunk
+                    LOG.debug("successfully wrote to outbound channel");
                     ctx.channel().read();
                 } else {
-                    LOG.info("Unable to write to outbound channel due to : ", future.cause());
+                    LOG.debug("Unable to write to outbound channel due to : ", future.cause());
                     future.channel().close();
                 }
             }
@@ -143,15 +142,9 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
 
-        LOG.info("channelReadComplete triggered, so writing data");
+        LOG.debug("channelReadComplete triggered, so writing data");
 
         ctx.flush();
-
-        /*
-        ChannelFuture future = ctx.writeAndFlush(Unpooled.EMPTY_BUFFER);
-
-        future.addListener(ChannelFutureListener.CLOSE);
-         */
     }
 
     @Override
@@ -165,8 +158,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 
-        LOG.info("caught exception : {}", cause);
-        //ctx.close();
+        LOG.debug("caught exception : {}", cause);
 
         HandlerUtil.closeOnFlush(ctx.channel());
     }

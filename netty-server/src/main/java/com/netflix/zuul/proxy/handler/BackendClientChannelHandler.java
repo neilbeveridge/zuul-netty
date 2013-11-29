@@ -49,7 +49,7 @@ public class BackendClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOG.info("exception caught : ", cause);
+        LOG.debug("exception caught : ", cause);
         HandlerUtil.closeOnFlush(ctx.channel());
     }
 
