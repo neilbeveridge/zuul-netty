@@ -6,7 +6,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Names.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import io.netty.buffer.Unpooled;
@@ -18,29 +17,19 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders.Values;
 import io.netty.handler.codec.http.HttpRequest;
 
-import java.util.Random;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter {
 
-    private static final String EXAMPLE_PATH = "/example";
-
     private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerHandler.class);
 
-    private static final Random RANDOM_GENERATOR = new Random();
+    private final String responsePrefix;
 
-    private final String responseToGive;
+    public HttpMockEndPointServerHandler(String responsePrefix) {
+        this.responsePrefix = responsePrefix;
 
-    public HttpMockEndPointServerHandler(String responseToGive) {
-        this.responseToGive = responseToGive;
-
-        if (responseToGive == null) {
-            LOG.debug("Response to give: random number");
-        } else {
-            LOG.debug("Response to give: string '{}'", responseToGive);
-        }
+        LOG.debug("Response to give: string '{}'", responsePrefix);
     }
 
     @Override
@@ -63,18 +52,7 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
             }
 
             boolean keepAlive = isKeepAlive(req);
-            FullHttpResponse response;
-
-            if (uri.equals(EXAMPLE_PATH)) {
-                byte[] content = getResponseContent();
-
-                response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
-                response.headers().set(CONTENT_TYPE, "text/plain");
-                response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
-            } else {
-                response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
-                response.headers().set(CONTENT_LENGTH, 0);
-            }
+            FullHttpResponse response = createResponseBasedOnUri(uri);
 
             LOG.debug("Returning response: {}", response);
 
@@ -88,20 +66,18 @@ public class HttpMockEndPointServerHandler extends ChannelInboundHandlerAdapter 
         }
     }
 
-    private byte[] getResponseContent() {
-        if (responseToGive != null) {
-            return responseToGive.getBytes();
-        }
+    private FullHttpResponse createResponseBasedOnUri(String uri) {
+        byte[] content = getResponseContent(uri);
 
-        return generateRandomContent();
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(content));
+        response.headers().set(CONTENT_TYPE, "text/plain");
+        response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
+
+        return response;
     }
 
-    private byte[] generateRandomContent() {
-        int random = RANDOM_GENERATOR.nextInt();
-        byte[] content = Integer.toString(random).getBytes();
-
-        LOG.info("content int = {}, bytes = {}", random, content);
-        return content;
+    private byte[] getResponseContent(String uri) {
+        return (responsePrefix + " " + uri).getBytes();
     }
 
     @Override

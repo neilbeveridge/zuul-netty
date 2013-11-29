@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 public class HttpMockEndPointServerInitializer extends ChannelInitializer<SocketChannel> {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(HttpMockEndPointServerInitializer.class);
-	private String responseToGive;
+	private String responsePrefix;
 	
-    public HttpMockEndPointServerInitializer(String responseToGive) {
-		this.responseToGive = responseToGive;
+    public HttpMockEndPointServerInitializer(String responsePrefix) {
+		this.responsePrefix = responsePrefix;
 	}
 
 	@Override
@@ -35,7 +35,7 @@ public class HttpMockEndPointServerInitializer extends ChannelInitializer<Socket
         p.addLast("encoder", new HttpResponseEncoder());
         // Remove the following line if you don't want automatic content compression.
         //p.addLast("deflater", new HttpContentCompressor());
-        p.addLast("handler", new HttpMockEndPointServerHandler(responseToGive));
+        p.addLast("handler", new HttpMockEndPointServerHandler(responsePrefix));
         
         LOG.info("Added handlers to channel pipeline : " + p.names());
     }

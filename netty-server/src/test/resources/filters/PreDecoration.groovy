@@ -26,10 +26,8 @@ import java.util.concurrent.ThreadLocalRandom
  * @author mhawthorne
  */
 class PreDecorationFilter extends AbstractZuulPreFilter {
-
-    private static final URI[] HOSTS = [
-        new URI ("http://localhost:8081")
-    ]
+    private URI mockBackEnd = new URI ("http://localhost:8081");
+    private URI invalidRoute = new URI ("http://localhost:8082");
 
     PreDecorationFilter() {
         super(5)
@@ -39,8 +37,17 @@ class PreDecorationFilter extends AbstractZuulPreFilter {
 
     @Override
     void requestReceived(FrameworkHttpRequest request) {
-        URI host = HOSTS[ThreadLocalRandom.current().nextInt(HOSTS.length)];
-        System.out.println("DEBUG PreDecorationFilter requestReceived, host = "+host);
-        request.setRoute(host);
+        System.out.println("URI received by script: " + request.getUri());
+
+        URI route;
+        
+        if("/example".equals(request.getUri())) {
+          route = mockBackEnd;
+        } else {
+          route = invalidRoute;
+        }
+
+        System.out.println("DEBUG PreDecorationFilter requestReceived, route = " + route);
+        request.setRoute(route);
     }
 }

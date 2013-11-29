@@ -23,7 +23,7 @@ import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
 public class ProxyServerTest {
     private static final String FILTERS_ROOT_PATH = "/filters";
 
-    private static final String EXPECTED_REPONSE = "correct example response";
+    private static final String EXPECTED_REPONSE_PREFIX = "correct example response";
 
     private static final int REMOTE_PORT = 8081;
     private static final int LOCAL_PORT = 8080;
@@ -33,7 +33,7 @@ public class ProxyServerTest {
 
     @Before
     public void setup() throws Exception {
-        backEndService = new MockEndpoint(REMOTE_PORT, EXPECTED_REPONSE);
+        backEndService = new MockEndpoint(REMOTE_PORT, EXPECTED_REPONSE_PREFIX);
         backEndService.start();
 
         ZuulFiltersLoader filtersChangeNotifier = new ZuulFiltersLoader(filtersRootPath());
@@ -63,7 +63,7 @@ public class ProxyServerTest {
     public void canProxyRequest() throws Exception {
         Response response = sendRequest("http://localhost:8080/example");
 
-        assertEquals(EXPECTED_REPONSE, response.content());
+        assertEquals(EXPECTED_REPONSE_PREFIX + " /example", response.content());
         assertEquals(OK.code(), response.responseCode());
     }
 

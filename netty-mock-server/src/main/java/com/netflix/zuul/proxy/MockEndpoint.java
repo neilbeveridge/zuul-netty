@@ -19,7 +19,7 @@ public class MockEndpoint {
     private static final Logger LOG = LoggerFactory.getLogger(MockEndpoint.class);
 
     private final int port;
-    private final String responseToGive;
+    private final String responsePrefix;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
@@ -29,9 +29,9 @@ public class MockEndpoint {
         this(port, null);
     }
 
-    public MockEndpoint(int port, String responseToGive) {
+    public MockEndpoint(int port, String responsePrefix) {
         this.port = port;
-        this.responseToGive = responseToGive;
+        this.responsePrefix = responsePrefix;
     }
 
     public void start() throws Exception {
@@ -42,7 +42,7 @@ public class MockEndpoint {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
-            .childHandler(new HttpMockEndPointServerInitializer(responseToGive));
+            .childHandler(new HttpMockEndPointServerInitializer(responsePrefix));
 
             ChannelFuture syncFuture = b.bind(port);
 

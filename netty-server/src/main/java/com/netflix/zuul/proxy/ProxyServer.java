@@ -9,11 +9,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import java.io.FileNotFoundException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.slf4j.Logger;
@@ -27,7 +22,6 @@ import com.netflix.zuul.netty.filter.ZuulFiltersLoader;
  */
 public class ProxyServer {
     private static final Logger LOG = LoggerFactory.getLogger(ProxyServer.class);
-    private static final String DEFAULT_FILTERS_ROOT_PATH = "/filters";
 
     private final int localPort;
     private EventLoopGroup bossGroup;
