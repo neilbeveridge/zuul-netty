@@ -18,6 +18,7 @@ import com.netflix.zuul.netty.filter.FiltersListener;
 import com.netflix.zuul.netty.filter.ZuulFilter;
 import com.netflix.zuul.netty.filter.ZuulPostFilter;
 import com.netflix.zuul.netty.filter.ZuulPreFilter;
+import com.netflix.zuul.proxy.core.CommonsConnectionPool;
 import com.netflix.zuul.proxy.handler.FrontEndServerHandler;
 import com.netflix.zuul.proxy.handler.HttpRequestFrameworkHandler;
 import com.netflix.zuul.proxy.handler.HttpResponseFrameworkHandler;
@@ -42,7 +43,7 @@ public class FrontendServerInitializer extends ChannelInitializer<SocketChannel>
         addZuulPostFilters(pipeline, postFilters);
         addZuulPreFilters(pipeline, preFilters);
 
-        pipeline.addLast("frontendServer", new FrontEndServerHandler());
+        pipeline.addLast("frontendServer", new FrontEndServerHandler(new CommonsConnectionPool()));
 
         LOG.debug("Added handlers to channel pipeline : {}", pipeline.names());
     }

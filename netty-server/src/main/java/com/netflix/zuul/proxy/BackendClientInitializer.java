@@ -24,6 +24,6 @@ public class BackendClientInitializer extends ChannelInitializer<SocketChannel> 
 		
 		pipeline.addLast("codec", new HttpClientCodec());
         pipeline.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
-		pipeline.addLast(new BackendClientChannelHandler(inboundChannel));
+		pipeline.addLast("backEndClientChannelHandler", new BackendClientChannelHandler(inboundChannel));
 	}
  }

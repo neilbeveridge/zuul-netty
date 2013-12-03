@@ -132,9 +132,9 @@ public class ProxyServer {
             filtersPath = args[1];
         }
         
-        LOG.info("filtersPath = {}", filtersPath);
+        LOG.debug("filtersPath = {}", filtersPath);
 
-        LOG.info("Starting server...");
+        LOG.debug("Starting server...");
 
         ZuulFiltersLoader changeNotifier = new ZuulFiltersLoader(Paths.get(filtersPath));
 

@@ -10,16 +10,21 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.zuul.proxy.BackendClientInitializer;
+import com.netflix.zuul.proxy.IllegalRouteException;
+import com.netflix.zuul.proxy.core.Connection;
+import com.netflix.zuul.proxy.core.ConnectionPool;
 
 /**
  * @author HWEB
@@ -28,15 +33,20 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(FrontEndServerHandler.class);
 
+	private static final String BACK_END_CLIENT_INITIALIZER = "backEndClientInitializer";
+
     private final String remoteHost;
     private final int remotePort;
 
     // outboundChannel is volatile since it is shared between threads (this handler & BackendClientChannelHandler).
     private volatile Channel outboundChannel;
 
-    public FrontEndServerHandler() {
+	private ConnectionPool connectionPool;
+
+    public FrontEndServerHandler(ConnectionPool connectionPool) {
         this.remoteHost = "localhost";
         this.remotePort = 8081;
+        this.connectionPool = connectionPool;
     }
 
     @Override
@@ -45,15 +55,10 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
         // get a reference to the inbound channel, which allows us to read data from external clients.
         final Channel inboundChannel = ctx.channel();
 
-        // Start the connection attempt. We need to be a CLIENT to the back-end server, so create a (client) Bootstrap, as opposed to a ServerBootstrap.
-        Bootstrap b = new Bootstrap();
-        b.group(inboundChannel.eventLoop())
-        .channel(ctx.channel().getClass())
-        .handler(new BackendClientInitializer(inboundChannel))
-        .option(ChannelOption.AUTO_READ, false);
-
         // connect to the back-end server
-        ChannelFuture future = b.connect(remoteHost, remotePort);
+        Connection connection = obtainConnection(inboundChannel);
+        
+        ChannelFuture future = connection.getChannelFuture();
 
         // get a reference to the outbound channel, which allows us to write data to the back-end server.
         outboundChannel = future.channel();
@@ -96,6 +101,20 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
                 }
             }
         }
+    }
+    
+    private Connection obtainConnection(final Channel inboundChannel) throws IllegalRouteException, URISyntaxException {
+
+    	URI hostRoute = new URI("http://" + this.remoteHost + ":" + this.remotePort);
+    	
+    	final Connection outboundConnection = connectionPool.borrow(hostRoute);
+
+        //always associate the outbound connection with this inbound connection
+        ChannelPipeline pipeline = outboundConnection.getChannel().pipeline();
+        
+        pipeline.addLast(BACK_END_CLIENT_INITIALIZER, new BackendClientInitializer(inboundChannel));
+               
+        return outboundConnection;
     }
 
     private void send404NotFoundResponse(ChannelHandlerContext ctx) {
