@@ -1,10 +1,13 @@
 package com.netflix.zuul.proxy;
 
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -42,10 +45,12 @@ public class FrontendServerInitializer extends ChannelInitializer<SocketChannel>
 
         addZuulPostFilters(pipeline, postFilters);
         addZuulPreFilters(pipeline, preFilters);
+        
+        pipeline.addLast("loggingHandler", new LoggingHandler(LogLevel.DEBUG));
 
-        pipeline.addLast("frontendServer", new FrontEndServerHandler(new CommonsConnectionPool()));
+        pipeline.addLast("frontendServer", new FrontEndServerHandler(new CommonsConnectionPool((Channel)channel)));
 
-        LOG.debug("Added handlers to channel pipeline : {}", pipeline.names());
+        LOG.debug("For channel {}, Added handlers to channel pipeline : {}", channel, pipeline.names());
     }
 
     private void addZuulPostFilters(ChannelPipeline pipeline, ConcurrentMap<ZuulPostFilter, Path> filters) {

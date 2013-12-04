@@ -2,11 +2,12 @@ package com.netflix.zuul.proxy.core;
 
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_GROW;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.AbstractNioChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
@@ -41,6 +42,8 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
 
     private volatile Map<URI, ObjectPool<ChannelFuture>> pool = new HashMap<>();
     private Lock poolCreationRaceLock = new ReentrantLock();
+
+	protected final Channel inboundChannel;
     
     private GenericObjectPool<ChannelFuture> createApplicationPool(final URI routeHost)
             throws IllegalRouteException {
@@ -89,11 +92,12 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
 
             @Override
             public ChannelFuture makeObject() throws Exception {
-            	EventLoopGroup group = new NioEventLoopGroup();
+            	
             	Bootstrap bootstrap = new Bootstrap();
-            	bootstrap.group(group)
+            	bootstrap.group(inboundChannel.eventLoop())
             	.channel(NioSocketChannel.class)
-            	.handler(PLACEHOLDER_HANDLER);
+            	.handler(PLACEHOLDER_HANDLER)
+            	.option(ChannelOption.AUTO_READ, false);
                 
                 LOG.debug("routeHost : {}", routeHost);
                 
@@ -164,14 +168,15 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
         return applicationPool;
     }
 
-    public CommonsConnectionPool() {
+    public CommonsConnectionPool(Channel inboundChannel) {
+    	this.inboundChannel = inboundChannel;
     }
     
 
     @Override
     public Connection borrow(URI routeHost)
             throws IllegalRouteException {
-
+    	
         //only take out the lock if absolutely necessary
         if (!pool.containsKey(routeHost)) {
             poolCreationRaceLock.lock();

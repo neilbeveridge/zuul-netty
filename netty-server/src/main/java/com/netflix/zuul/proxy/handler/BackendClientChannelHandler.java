@@ -5,6 +5,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,10 @@ public class BackendClientChannelHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(final ChannelHandlerContext ctx, Object msg) throws Exception {
+    	
+    	ChannelPipeline pipeline = inboundChannel.pipeline();
+        
+        LOG.debug("For inboundChannel : {}, handlers in pipeline : {}", inboundChannel, pipeline.names());
 
         ChannelFuture future = inboundChannel.writeAndFlush(msg);
 
@@ -34,8 +39,10 @@ public class BackendClientChannelHandler extends ChannelInboundHandlerAdapter {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (future.isSuccess()) {
+                	LOG.debug("successfully wrote to inbound channel");
                     ctx.channel().read();
                 } else {
+                	LOG.debug("Unable to write to outbound channel due to : ", future.cause());
                     future.channel().close();
                 }
             }

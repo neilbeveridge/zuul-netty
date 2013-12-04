@@ -5,6 +5,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,8 @@ public class HttpMockEndPointServerInitializer extends ChannelInitializer<Socket
         p.addLast("encoder", new HttpResponseEncoder());
         // Remove the following line if you don't want automatic content compression.
         //p.addLast("deflater", new HttpContentCompressor());
+        
+        p.addLast("loggingHandler", new LoggingHandler(LogLevel.DEBUG));
         p.addLast("handler", new HttpMockEndPointServerHandler(responsePrefix));
         
         LOG.info("Added handlers to channel pipeline : " + p.names());

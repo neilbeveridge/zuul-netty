@@ -14,6 +14,11 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -112,8 +117,13 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
         //always associate the outbound connection with this inbound connection
         ChannelPipeline pipeline = outboundConnection.getChannel().pipeline();
         
-        pipeline.addLast(BACK_END_CLIENT_INITIALIZER, new BackendClientInitializer(inboundChannel));
+        pipeline.addLast("codec", new HttpClientCodec());
+        pipeline.addLast("aggregator", new HttpObjectAggregator(4 * 1024));
+        pipeline.addLast("loggingHandler", new LoggingHandler(LogLevel.DEBUG));
+		pipeline.addLast("backEndClientChannelHandler", new BackendClientChannelHandler(inboundChannel));
                
+		LOG.debug("For channel {}, Added handlers to channel pipeline : {}", inboundChannel, pipeline.names());
+		
         return outboundConnection;
     }
 
@@ -135,6 +145,10 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     private void routeToBackend(final ChannelHandlerContext ctx, Object msg) {
         FullHttpRequest completeMsg = (FullHttpRequest) msg;
+        
+        ChannelPipeline pipeline = outboundChannel.pipeline();
+        
+        LOG.debug("For outboundChannel : {}, handlers in pipeline : {}",outboundChannel, pipeline.names());
 
         ChannelFuture future = outboundChannel.writeAndFlush(completeMsg);
 
