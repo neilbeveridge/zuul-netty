@@ -11,7 +11,7 @@ public class HandlerUtil {
      */
     public static void closeOnFlush(Channel ch) {
     	
-    	// wait for the outboundChannel to be active, i.e. this will only happen once the channelActive() method has completed
+    	// only attempt to close the channel if it is active.
         if (ch.isActive()) {
         	
         	// Write an empty buffer to indicate the end of the chunked transfer.

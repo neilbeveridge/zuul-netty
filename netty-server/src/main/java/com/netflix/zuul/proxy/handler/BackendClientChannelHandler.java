@@ -42,7 +42,7 @@ public class BackendClientChannelHandler extends ChannelInboundHandlerAdapter {
                 	LOG.debug("successfully wrote to inbound channel");
                     ctx.channel().read();
                 } else {
-                	LOG.debug("Unable to write to outbound channel due to : ", future.cause());
+                	LOG.debug("Unable to write to inbound channel due to : ", future.cause());
                     future.channel().close();
                 }
             }

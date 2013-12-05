@@ -45,7 +45,9 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     // outboundChannel is volatile since it is shared between threads (this handler & BackendClientChannelHandler).
     private volatile Channel outboundChannel;
-
+    
+    private volatile Connection outboundConnection;
+    
 	private ConnectionPool connectionPool;
 
     public FrontEndServerHandler(ConnectionPool connectionPool) {
@@ -112,7 +114,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     	URI hostRoute = new URI("http://" + this.remoteHost + ":" + this.remotePort);
     	
-    	final Connection outboundConnection = connectionPool.borrow(hostRoute);
+    	Connection outboundConnection = connectionPool.borrow(hostRoute);
 
         //always associate the outbound connection with this inbound connection
         ChannelPipeline pipeline = outboundConnection.getChannel().pipeline();
@@ -186,9 +188,17 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
         if (outboundChannel != null) {
             HandlerUtil.closeOnFlush(outboundChannel);
         }
+
+        returnConnectionToPool();
     }
 
-    @Override
+    private void returnConnectionToPool() {
+		
+    	LOG.debug("releasing outboundConnection : {} back to the connectionPool : {}", outboundConnection.getId(), connectionPool);
+		connectionPool.release(outboundConnection);
+	}
+
+	@Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 
         LOG.debug("caught exception : {}", cause);

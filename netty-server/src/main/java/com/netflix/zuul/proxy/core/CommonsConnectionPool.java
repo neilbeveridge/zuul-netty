@@ -40,7 +40,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
 
 	protected static final ChannelHandler PLACEHOLDER_HANDLER = new PlaceholderHandler();
 
-    private volatile Map<URI, ObjectPool<ChannelFuture>> pool = new HashMap<>();
+    private volatile Map<URI, ObjectPool<ChannelFuture>> poolMap = new HashMap<>();
     private Lock poolCreationRaceLock = new ReentrantLock();
 
 	protected final Channel inboundChannel;
@@ -103,8 +103,13 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
                 
                 SocketAddress remoteAddress = new InetSocketAddress(routeHost.getHost(), routeHost.getPort());
 				final ChannelFuture future = bootstrap.connect(remoteAddress);
-                LOG.debug("attempting connection to remote host {}:{} on connection {}", routeHost.getHost(), routeHost.getPort(),
+                LOG.debug("attempting connection to remote host {}:{} on channel {}", routeHost.getHost(), routeHost.getPort(),
                         Integer.toHexString(future.channel().hashCode()));
+                
+                LOG.debug("inboundChannel : {}, eventloop for inboundChannel : {}", inboundChannel, inboundChannel.eventLoop());
+                LOG.debug("future : {}", future);
+                LOG.debug("channel : {}", future.channel());
+                LOG.debug("eventloop : {}", future.channel().eventLoop());
 
                 future.addListener(new ChannelFutureListener() {
 
@@ -178,16 +183,17 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
             throws IllegalRouteException {
     	
         //only take out the lock if absolutely necessary
-        if (!pool.containsKey(routeHost)) {
+        if (!poolMap.containsKey(routeHost)) {
             poolCreationRaceLock.lock();
-            if (!pool.containsKey(routeHost)) {
-                this.pool.put(routeHost, createApplicationPool(routeHost));
+            if (!poolMap.containsKey(routeHost)) {
+                this.poolMap.put(routeHost, createApplicationPool(routeHost));
             }
             poolCreationRaceLock.unlock();
         }
 
         try {
-            ChannelFuture future = pool.get(routeHost).borrowObject();
+        	ObjectPool<ChannelFuture> pool = poolMap.get(routeHost);
+            ChannelFuture future = pool.borrowObject();
             Connection connection = new Connection(routeHost, future);
 
             if (LOG.isDebugEnabled()) {
@@ -206,7 +212,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     public void release(Connection connection) {
         LOG.debug("releasing connection {}", connection.getId());
         try {
-            pool.get(connection.getRoute()).returnObject(connection.getChannelFuture());
+            poolMap.get(connection.getRoute()).returnObject(connection.getChannelFuture());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -216,7 +222,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
     public void destroy(Connection connection) {
         LOG.debug("destroying connection {}", connection.getId());
         try {
-            pool.get(connection.getRoute()).invalidateObject(connection.getChannelFuture());
+            poolMap.get(connection.getRoute()).invalidateObject(connection.getChannelFuture());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

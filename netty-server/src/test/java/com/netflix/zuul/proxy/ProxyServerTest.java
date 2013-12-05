@@ -14,7 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.io.CharStreams;
@@ -28,11 +30,11 @@ public class ProxyServerTest {
     private static final int REMOTE_PORT = 8081;
     private static final int LOCAL_PORT = 8080;
 
-    private MockEndpoint backEndService;
-    private ProxyServer proxyServer;
+    private static MockEndpoint backEndService;
+    private static ProxyServer proxyServer;
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeClass
+    public static void setup() throws Exception {
         backEndService = new MockEndpoint(REMOTE_PORT, EXPECTED_REPONSE_PREFIX);
         backEndService.start();
 
@@ -43,7 +45,7 @@ public class ProxyServerTest {
         proxyServer.start();
     }
 
-    private Path filtersRootPath() throws URISyntaxException {
+    private static Path filtersRootPath() throws URISyntaxException {
         URL resource = ProxyServerTest.class.getResource(FILTERS_ROOT_PATH);
 
         assertNotNull("File/directory not found: " + FILTERS_ROOT_PATH, resource);
@@ -53,8 +55,8 @@ public class ProxyServerTest {
         return Paths.get(resourceUri);
     }
 
-    @After
-    public void stop() throws Exception {
+    @AfterClass
+    public static void stop() throws Exception {
         proxyServer.stop();
         backEndService.stop();
     }
