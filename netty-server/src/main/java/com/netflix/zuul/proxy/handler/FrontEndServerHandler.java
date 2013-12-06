@@ -51,6 +51,7 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 	private ConnectionPool connectionPool;
 
     public FrontEndServerHandler(ConnectionPool connectionPool) {
+    	LOG.debug("connectionPool : {}", connectionPool);
         this.remoteHost = "localhost";
         this.remotePort = 8081;
         this.connectionPool = connectionPool;
@@ -58,9 +59,13 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    	
+    	LOG.debug("channel became active for channel : {}", ctx.channel());
 
         // get a reference to the inbound channel, which allows us to read data from external clients.
         final Channel inboundChannel = ctx.channel();
+        
+        disposeConnection();
 
         // connect to the back-end server
         Connection connection = obtainConnection(inboundChannel);
@@ -93,6 +98,8 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
         // wait for the outboundChannel to be active, i.e. this will only happen once the channelActive() method has completed
         if (outboundChannel.isActive()) {
+        	
+        	LOG.debug("outboundChannel : {} isActive for ctx : {}", outboundChannel, ctx);
 
             // Only forward HttpRequest messages to the back-end server.
             if (msg instanceof FullHttpRequest) {
@@ -114,7 +121,9 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
 
     	URI hostRoute = new URI("http://" + this.remoteHost + ":" + this.remotePort);
     	
-    	Connection outboundConnection = connectionPool.borrow(hostRoute);
+    	LOG.debug("trying to borrow a connection from the pool for hostRoute : {}", hostRoute);
+    	
+    	outboundConnection = connectionPool.borrow(hostRoute);
 
         //always associate the outbound connection with this inbound connection
         ChannelPipeline pipeline = outboundConnection.getChannel().pipeline();
@@ -188,10 +197,18 @@ public class FrontEndServerHandler extends ChannelInboundHandlerAdapter {
         if (outboundChannel != null) {
             HandlerUtil.closeOnFlush(outboundChannel);
         }
-
-        returnConnectionToPool();
     }
-
+    
+    private void disposeConnection() {
+        final Connection connection = outboundConnection;
+        if (connection != null) {
+            LOG.debug("disposing connection {}", connection.getId());
+            this.outboundConnection = null;
+            //removeHandler(connection);
+            returnConnectionToPool();
+        }
+    }
+    
     private void returnConnectionToPool() {
 		
     	LOG.debug("releasing outboundConnection : {} back to the connectionPool : {}", outboundConnection.getId(), connectionPool);

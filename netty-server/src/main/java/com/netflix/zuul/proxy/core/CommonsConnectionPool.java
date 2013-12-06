@@ -98,6 +98,8 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
             	.channel(NioSocketChannel.class)
             	.handler(PLACEHOLDER_HANDLER)
             	.option(ChannelOption.AUTO_READ, false);
+            	
+            	LOG.debug("bootstrap : {}, group : {}", bootstrap, bootstrap.group());
                 
                 LOG.debug("routeHost : {}", routeHost);
                 
@@ -136,7 +138,11 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
 
             @Override
             public boolean validateObject(ChannelFuture future) {
+            	LOG.debug("future isDone : {}", future.isDone());
+            	LOG.debug("future is success : {}", future.isSuccess());
+            	LOG.debug("channel : {}, isActive : {}, isRegistered : {}", future.channel(), future.channel().isActive(), future.channel().isRegistered());
                 boolean isValid = !future.isDone() || future.isDone() && future.isSuccess() && future.channel().isActive();
+                LOG.debug("future : {}, isValid : {}", future, isValid);
                 if (!isValid) {
                     LOG.debug("connection not valid {}", Integer.toHexString(future.channel().hashCode()));
                 }
@@ -193,6 +199,7 @@ public class CommonsConnectionPool implements com.netflix.zuul.proxy.core.Connec
 
         try {
         	ObjectPool<ChannelFuture> pool = poolMap.get(routeHost);
+        	LOG.debug("pool : {}, number of active : {}, number of idle : {}", pool, pool.getNumActive(), pool.getNumIdle());
             ChannelFuture future = pool.borrowObject();
             Connection connection = new Connection(routeHost, future);
 
